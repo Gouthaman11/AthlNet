@@ -26,11 +26,6 @@ AthlNet is a full-stack networking and performance platform for **athletes**, **
 - AI-based highlight tagging *(planned)*
 - Auto-sorted by sport and popularity
 
-### 📅 Event & Camp Management
-- Create or join tryouts and camps
-- Slot-based booking system
-- Payment integration *(optional)*
-
 ### 💸 Sponsorship & Talent Search
 - Sponsors filter by sport, region, performance
 - Direct outreach or offer proposals
