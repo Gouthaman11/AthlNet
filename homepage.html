@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AthlNet - Your Game. Your Stage.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        athlBlue: '#0a2540',
+                        athlTeal: '#00c1b3',
+                        athlGray: '#f5f7fa',
+                        athlDarkGray: '#425466',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .hero-bg {
+            background-image: linear-gradient(rgba(10, 37, 64, 0.8), rgba(10, 37, 64, 0.8)), url('https://images.unsplash.com/photo-1543357480-c60d400e7f89?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-bg {
+            background-color: #0a2540;
+            background-image: radial-gradient(circle at 10% 20%, rgba(0, 193, 179, 0.1) 0%, rgba(10, 37, 64, 0.9) 90%);
+        }
+    </style>
+</head>
+<body class="font-poppins bg-athlGray text-athlBlue">
+    <!-- Header/Navbar -->
+    <header class="sticky top-0 z-50 bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-10">
+                    <a href="#" class="text-2xl font-bold text-athlBlue">
+                        <span class="text-athlTeal">Athl</span>Net
+                    </a>
+                    <nav class="hidden md:flex space-x-8">
+                        <a href="#" class="font-medium hover:text-athlTeal transition">Home</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition">Discover</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition">Upload Video</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition">Opportunities</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition">Messages</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition">Profile</a>
+                    </nav>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="hidden md:block px-4 py-2 font-medium rounded-md hover:bg-athlGray transition">Sign In</button>
+                    <button class="bg-athlTeal text-white px-4 py-2 rounded-md font-medium hover:bg-opacity-90 transition">Get Started</button>
+                    <button class="md:hidden text-athlBlue">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-20 md:py-32">
+        <div class="container mx-auto px-4">
+            <div class="max-w-2xl mx-auto text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-6">Your Game. Your Stage.</h1>
+                <p class="text-xl mb-10 text-gray-200">Connect with scouts, sponsors, and teams to take your athletic career to the next level.</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button class="bg-athlTeal text-white px-8 py-3 rounded-md font-medium hover:bg-opacity-90 transition">Create Profile</button>
+                    <button class="bg-white text-athlBlue px-8 py-3 rounded-md font-medium hover:bg-opacity-90 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-play"></i> Watch Demo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-12">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Main Content Area -->
+            <div class="lg:w-2/3">
+                <!-- Video Feed Section -->
+                <section class="mb-12">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Featured Highlights</h2>
+                        <div class="flex gap-2 overflow-x-auto">
+                            <button class="px-4 py-2 bg-athlTeal text-white rounded-full text-sm font-medium">All Sports</button>
+                            <button class="px-4 py-2 bg-white rounded-full text-sm font-medium hover:bg-gray-100">Basketball</button>
+                            <button class="px-4 py-2 bg-white rounded-full text-sm font-medium hover:bg-gray-100">Football</button>
+                            <button class="px-4 py-2 bg-white rounded-full text-sm font-medium hover:bg-gray-100">Track</button>
+                            <button class="px-4 py-2 bg-white rounded-full text-sm font-medium hover:bg-gray-100">Volleyball</button>
+                            <button class="px-4 py-2 bg-white rounded-full text-sm font-medium hover:bg-gray-100">Soccer</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Video Card 1 -->
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden video-card transition duration-300">
+                            <div class="relative">
+                                <img src="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1005&q=80" alt="Basketball player" class="w-full h-48 object-cover">
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">2:45</div>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="font-bold">Marcus Johnson</h3>
+                                        <p class="text-athlDarkGray text-sm">Basketball • Los Angeles, CA</p>
+                                    </div>
+                                    <span class="bg-athlTeal text-white text-xs px-2 py-1 rounded-full">PG</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-4">Junior year highlights - 18.5 PPG, 7.2 APG, 4.3 RPG</p>
+                                <div class="flex justify-between text-athlDarkGray">
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="far fa-heart"></i> 124
+                                    </button>
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="far fa-comment"></i> 18
+                                    </button>
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="fas fa-share"></i> Share
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Video Card 2 -->
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden video-card transition duration-300">
+                            <div class="relative">
+                                <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1093&q=80" alt="Soccer player" class="w-full h-48 object-cover">
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">1:32</div>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="font-bold">Sophia Rodriguez</h3>
+                                        <p class="text-athlDarkGray text-sm">Soccer • Miami, FL</p>
+                                    </div>
+                                    <span class="bg-athlTeal text-white text-xs px-2 py-1 rounded-full">FW</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-4">2023 season highlights - 22 goals, 8 assists</p>
+                                <div class="flex justify-between text-athlDarkGray">
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="far fa-heart"></i> 89
+                                    </button>
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="far fa-comment"></i> 12
+                                    </button>
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="fas fa-share"></i> Share
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Video Card 3 -->
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden video-card transition duration-300">
+                            <div class="relative">
+                                <img src="https://images.unsplash.com/photo-1543351611-58f69d7c1781?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=987&q=80" alt="Track athlete" class="w-full h-48 object-cover">
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">0:48</div>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="font-bold">Tyler Chen</h3>
+                                        <p class="text-athlDarkGray text-sm">Track & Field • Chicago, IL</p>
+                                    </div>
+                                    <span class="bg-athlTeal text-white text-xs px-2 py-1 rounded-full">100m</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-4">State championship - 10.45s 100m dash</p>
+                                <div class="flex justify-between text-athlDarkGray">
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="far fa-heart"></i> 156
+                                    </button>
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="far fa-comment"></i> 24
+                                    </button>
+                                    <button class="flex items-center gap-1 hover:text-athlTeal">
+                                        <i class="fas fa-share"></i> Share
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 text-center">
+                        <button class="px-6 py-2 border border-athlTeal text-athlTeal rounded-md font-medium hover:bg-athlTeal hover:text-white transition">
+                            Load More Highlights
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- Athlete Leaderboard -->
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold mb-6">Athlete Leaderboard</h2>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Athlete</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sport</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Engagement</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 bg-athlTeal text-white rounded-full text-xs font-bold">1</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10">
+                                                    <img class="h-10 w-10 rounded-full" src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">James Wilson</div>
+                                                    <div class="text-sm text-gray-500">Basketball</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Basketball</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">25.3 PPG, 10.2 RPG</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-eye text-gray-400 mr-1"></i>
+                                                <span class="text-sm text-gray-500 mr-3">4.2K</span>
+                                                <i class="fas fa-heart text-gray-400 mr-1"></i>
+                                                <span class="text-sm text-gray-500">328</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 bg-yellow-400 text-white rounded-full text-xs font-bold">2</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10">
+                                                    <img class="h-10 w-10 rounded-full" src="https://randomuser.me/api/portraits/women/44.jpg" alt="">
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">Sarah Miller</div>
+                                                    <div class="text-sm text-gray-500">Volleyball</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">Volleyball</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">3.8 kills/set, 92% serve</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-eye text-gray-400 mr-1"></i>
+                                                <span class="text-sm text-gray-500 mr-3">3.7K</span>
+                                                <i class="fas fa-heart text-gray-400 mr-1"></i>
+                                                <span class="text-sm text-gray-500">291</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 bg-amber-600 text-white rounded-full text-xs font-bold">3</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10">
+                                                    <img class="h-10 w-10 rounded-full" src="https://randomuser.me/api/portraits/men/75.jpg" alt="">
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">David Kim</div>
+                                                    <div class="text-sm text-gray-500">Soccer</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Soccer</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">18 goals, 12 assists</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-eye text-gray-400 mr-1"></i>
+                                                <span class="text-sm text-gray-500 mr-3">3.5K</span>
+                                                <i class="fas fa-heart text-gray-400 mr-1"></i>
+                                                <span class="text-sm text-gray-500">267</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Stats Strip -->
+                <section class="stats-bg text-white rounded-xl p-8 mb-12">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                        <div>
+                            <div class="text-3xl md:text-4xl font-bold mb-2">15,000+</div>
+                            <div class="text-athlTeal font-medium">Athletes</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl md:text-4xl font-bold mb-2">3,200+</div>
+                            <div class="text-athlTeal font-medium">Coaches</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl md:text-4xl font-bold mb-2">850+</div>
+                            <div class="text-athlTeal font-medium">Success Stories</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl md:text-4xl font-bold mb-2">1,500+</div>
+                            <div class="text-athlTeal font-medium">Sponsors</div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Success Stories -->
+                <section class="mb-12">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Success Stories</h2>
+                        <a href="#" class="text-athlTeal font-medium hover:underline">View All</a>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Story 1 -->
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                            <div class="p-6">
+                                <div class="flex items-center mb-4">
+                                    <img class="h-12 w-12 rounded-full" src="https://randomuser.me/api/portraits/women/32.jpg" alt="Jessica Parker">
+                                    <div class="ml-4">
+                                        <h3 class="font-bold">Jessica Parker</h3>
+                                        <p class="text-athlDarkGray text-sm">Basketball • Signed with UCLA</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 mb-4">"AthlNet helped me get noticed by college scouts when no one was watching my games. Uploading my highlights led to 12 scholarship offers!"</p>
+                                <div class="flex items-center text-sm text-athlDarkGray">
+                                    <i class="fas fa-check-circle text-athlTeal mr-2"></i>
+                                    <span>Verified Success Story</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Story 2 -->
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                            <div class="p-6">
+                                <div class="flex items-center mb-4">
+                                    <img class="h-12 w-12 rounded-full" src="https://randomuser.me/api/portraits/men/42.jpg" alt="Carlos Mendez">
+                                    <div class="ml-4">
+                                        <h3 class="font-bold">Carlos Mendez</h3>
+                                        <p class="text-athlDarkGray text-sm">Soccer • Signed with NY Red Bulls</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 mb-4">"After 3 years of trying to get noticed, my AthlNet profile got me an invite to an MLS combine. Now I'm living my dream as a professional soccer player."</p>
+                                <div class="flex items-center text-sm text-athlDarkGray">
+                                    <i class="fas fa-check-circle text-athlTeal mr-2"></i>
+                                    <span>Verified Success Story</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Final CTA -->
+                <section class="bg-white rounded-xl shadow-md p-8 text-center">
+                    <h2 class="text-2xl font-bold mb-4">Ready to take your game to the next level?</h2>
+                    <p class="text-gray-600 mb-6 max-w-2xl mx-auto">Join thousands of athletes who've been discovered through AthlNet. It takes just minutes to create your profile and start sharing your highlights.</p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button class="bg-athlTeal text-white px-8 py-3 rounded-md font-medium hover:bg-opacity-90 transition">Create Free Profile</button>
+                        <button class="border border-athlBlue text-athlBlue px-8 py-3 rounded-md font-medium hover:bg-gray-50 transition">How It Works</button>
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="lg:w-1/3 space-y-6">
+                <!-- Available Sponsorships -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="font-bold text-lg mb-4 flex items-center">
+                        <i class="fas fa-trophy text-athlTeal mr-2"></i>
+                        Available Sponsorships
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <img src="https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png" alt="Nike" class="h-8 w-auto mr-3 mt-1">
+                            <div>
+                                <h4 class="font-medium">Nike Emerging Talent Program</h4>
+                                <p class="text-sm text-athlDarkGray">For basketball players aged 16-21</p>
+                                <button class="text-athlTeal text-sm font-medium mt-1 hover:underline">View Details</button>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <img src="https://logos-world.net/wp-content/uploads/2020/04/Adidas-Logo.png" alt="Adidas" class="h-8 w-auto mr-3 mt-1">
+                            <div>
+                                <h4 class="font-medium">Adidas Next Gen Soccer</h4>
+                                <p class="text-sm text-athlDarkGray">Open tryouts for U18/U21 players</p>
+                                <button class="text-athlTeal text-sm font-medium mt-1 hover:underline">View Details</button>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <img src="https://logos-world.net/wp-content/uploads/2020/11/Under-Armour-Logo.png" alt="Under Armour" class="h-8 w-auto mr-3 mt-1">
+                            <div>
+                                <h4 class="font-medium">UA All-American Program</h4>
+                                <p class="text-sm text-athlDarkGray">Multi-sport sponsorship opportunities</p>
+                                <button class="text-athlTeal text-sm font-medium mt-1 hover:underline">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-full mt-4 text-athlTeal font-medium text-sm hover:underline">See All Sponsorships</button>
+                </div>
+                
+                <!-- Rising Talents -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="font-bold text-lg mb-4 flex items-center">
+                        <i class="fas fa-bolt text-athlTeal mr-2"></i>
+                        Rising Talents
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Emma Johnson" class="h-10 w-10 rounded-full mr-3">
+                            <div>
+                                <h4 class="font-medium">Emma Johnson</h4>
+                                <p class="text-sm text-athlDarkGray">Volleyball • 1.2K views this week</p>
+                            </div>
+                            <button class="ml-auto text-athlTeal hover:text-athlBlue">
+                                <i class="fas fa-plus-circle text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center">
+                            <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="Ryan Patel" class="h-10 w-10 rounded-full mr-3">
+                            <div>
+                                <h4 class="font-medium">Ryan Patel</h4>
+                                <p class="text-sm text-athlDarkGray">Track & Field • 980 views this week</p>
+                            </div>
+                            <button class="ml-auto text-athlTeal hover:text-athlBlue">
+                                <i class="fas fa-plus-circle text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center">
+                            <img src="https://randomuser.me/api/portraits/women/28.jpg" alt="Mia Williams" class="h-10 w-10 rounded-full mr-3">
+                            <div>
+                                <h4 class="font-medium">Mia Williams</h4>
+                                <p class="text-sm text-athlDarkGray">Basketball • 1.5K views this week</p>
+                            </div>
+                            <button class="ml-auto text-athlTeal hover:text-athlBlue">
+                                <i class="fas fa-plus-circle text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="w-full mt-4 text-athlTeal font-medium text-sm hover:underline">View All Rising Talents</button>
+                </div>
+                
+                <!-- Upcoming Events -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="font-bold text-lg mb-4 flex items-center">
+                        <i class="far fa-calendar-alt text-athlTeal mr-2"></i>
+                        Upcoming Events
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium">West Coast Basketball Showcase</h4>
+                            <p class="text-sm text-athlDarkGray mb-1">June 15-17 • Los Angeles, CA</p>
+                            <div class="flex items-center text-sm text-athlDarkGray">
+                                <i class="fas fa-user-tie text-athlTeal mr-2"></i>
+                                <span>12 college scouts attending</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">National Soccer ID Camp</h4>
+                            <p class="text-sm text-athlDarkGray mb-1">July 5-7 • Dallas, TX</p>
+                            <div class="flex items-center text-sm text-athlDarkGray">
+                                <i class="fas fa-user-tie text-athlTeal mr-2"></i>
+                                <span>MLS and NCAA scouts confirmed</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">Elite Volleyball Combine</h4>
+                            <p class="text-sm text-athlDarkGray mb-1">August 12-14 • Chicago, IL</p>
+                            <div class="flex items-center text-sm text-athlDarkGray">
+                                <i class="fas fa-user-tie text-athlTeal mr-2"></i>
+                                <span>D1 program directors attending</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-full mt-4 text-athlTeal font-medium text-sm hover:underline">See All Events</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-athlBlue text-white pt-12 pb-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">
+                        <span class="text-athlTeal">Athl</span>Net
+                    </h3>
+                    <p class="text-gray-300 mb-4">Connecting athletes with opportunities since 2018.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-300 hover:text-white">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Home</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Discover</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Upload Video</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Opportunities</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Success Stories</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Company</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">About Us</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Careers</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Blog</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Press</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Terms of Service</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">Cookie Policy</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">GDPR</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white hover:underline">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-6">
+                <p class="text-gray-300 text-sm text-center">© 2023 AthlNet. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
