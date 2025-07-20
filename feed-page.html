@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AthlNet - Sports Networking Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+     <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .navy-bg {
+            background-color: #ffffff;
+        }
+        .teal-accent {
+            color: #15d0c0;;
+        }
+        .teal-bg {
+            background-color: #15d0c0;;
+        }
+        .hover-teal:hover {
+            color: #15d0c0;;
+        }
+        .hover-teal-bg:hover {
+            background-color: #15d0c0;;
+        }
+        .post-shadow {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .sidebar-shadow {
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        }
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+       #font-color{
+        color: rgb(23, 23, 49);
+       }
+        #athl-font{
+            color: #15d0c0;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    
+    <nav class="navy-bg text-white p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-running text-2xl teal-accent"></i>
+                <a href="#" class="text-2xl font-bold text-athlBlue">
+                        <span class="text-athlTeal" id="athl-font">Athl</span><span id="font-color">Net</span>
+                    </a>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6">
+                <nav class="hidden md:flex space-x-8 ">
+                        <a href="#" class="font-medium hover:text-athlTeal transition" id="font-color">Home</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition" id="font-color">Discover</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition" id="font-color">Upload Video</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition" id="font-color">Opportunities</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition" id="font-color">Messages</a>
+                        <a href="#" class="font-medium hover:text-athlTeal transition" id="font-color">Profile</a>
+                    </nav>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <i class="fas fa-bell text-xl cursor-pointer hover:text-teal-200" id="font-color"></i>
+                    <span class="notification-dot" ></span>
+                </div>
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" class="w-8 h-8 rounded-full cursor-pointer" >
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-6 flex flex-col md:flex-row">
+        <!-- Left Sidebar -->
+        <div class="w-full md:w-1/4 lg:w-1/5 pr-0 md:pr-6 mb-6 md:mb-0">
+            <div class="bg-white rounded-xl p-4 sidebar-shadow mb-6">
+                <div class="flex items-center mb-4">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" class="w-12 h-12 rounded-full mr-3">
+                    <div>
+                        <h3 class="font-semibold">Marcus Johnson</h3>
+                        <p class="text-sm text-gray-500">Basketball • Los Angeles</p>
+                    </div>
+                </div>
+                <div class="border-t pt-3">
+                    <p class="text-sm text-gray-600"><span class="font-medium">Connections:</span> 248</p>
+                    <p class="text-sm text-gray-600"><span class="font-medium">Recommendations:</span> 12</p>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-4 sidebar-shadow mb-6">
+                <h3 class="font-semibold mb-3 flex items-center">
+                    <i class="fas fa-chart-line mr-2 teal-accent"></i> Trending Players
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <span class="text-xs font-medium bg-gray-100 px-2 py-1 rounded mr-2">1</span>
+                        <img src="https://randomuser.me/api/portraits/women/28.jpg" alt="Player" class="w-8 h-8 rounded-full mr-2">
+                        <div>
+                            <p class="text-sm font-medium">Emma Rodriguez</p>
+                            <p class="text-xs text-gray-500">Volleyball</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-xs font-medium bg-gray-100 px-2 py-1 rounded mr-2">2</span>
+                        <img src="https://randomuser.me/api/portraits/men/65.jpg" alt="Player" class="w-8 h-8 rounded-full mr-2">
+                        <div>
+                            <p class="text-sm font-medium">James Wilson</p>
+                            <p class="text-xs text-gray-500">Swimming</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-xs font-medium bg-gray-100 px-2 py-1 rounded mr-2">3</span>
+                        <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Player" class="w-8 h-8 rounded-full mr-2">
+                        <div>
+                            <p class="text-sm font-medium">Sophia Martinez</p>
+                            <p class="text-xs text-gray-500">Gymnastics</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-xs font-medium bg-gray-100 px-2 py-1 rounded mr-2">4</span>
+                        <img src="https://randomuser.me/api/portraits/men/33.jpg" alt="Player" class="w-8 h-8 rounded-full mr-2">
+                        <div>
+                            <p class="text-sm font-medium">Ryan Kim</p>
+                            <p class="text-xs text-gray-500">Track & Field</p>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="text-sm teal-accent font-medium mt-2 block">See rankings</a>
+            </div>
+            
+            <div class="bg-white rounded-xl p-4 sidebar-shadow">
+                <h3 class="font-semibold mb-3 flex items-center">
+                    <i class="fas fa-bullseye mr-2 teal-accent"></i> Opportunities
+                </h3>
+                <div class="space-y-3">
+                    <div class="p-2 bg-blue-50 rounded-lg">
+                        <p class="text-sm font-medium">NBA Scouting Combine</p>
+                        <p class="text-xs text-gray-500">June 15 • Chicago</p>
+                    </div>
+                    <div class="p-2">
+                        <p class="text-sm font-medium">EuroLeague Tryouts</p>
+                        <p class="text-xs text-gray-500">July 2 • Barcelona</p>
+                    </div>
+                </div>
+                <a href="#" class="text-sm teal-accent font-medium mt-2 block">Find more</a>
+            </div>
+        </div>
+        
+        <!-- Main Feed -->
+        <div class="w-full md:w-2/4 lg:w-3/5 mb-6 md:mb-0">
+            <!-- Post Creation Box -->
+            <div class="bg-white rounded-xl p-4 post-shadow mb-6">
+                <div class="flex items-start mb-4">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" class="w-10 h-10 rounded-full mr-3">
+                    <input type="text" placeholder="Share a performance, recommend a teammate..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-100">
+                </div>
+                <div class="flex flex-col space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div class="flex space-x-2">
+                            <button class="flex items-center text-gray-500 hover:text-teal-600 px-3 py-1 rounded-full hover:bg-teal-50">
+                                <i class="fas fa-video mr-1"></i> Video
+                            </button>
+                            <button class="flex items-center text-gray-500 hover:text-teal-600 px-3 py-1 rounded-full hover:bg-teal-50">
+                                <i class="fas fa-image mr-1"></i> Image
+                            </button>
+                            <button class="flex items-center text-gray-500 hover:text-teal-600 px-3 py-1 rounded-full hover:bg-teal-50">
+                                <i class="fas fa-poll mr-1"></i> Poll
+                            </button>
+                            <button class="flex items-center text-gray-500 hover:text-teal-600 px-3 py-1 rounded-full hover:bg-teal-50">
+                                <i class="fas fa-trophy mr-1"></i> Achievement
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="flex space-x-2">
+                            <button class="flex items-center text-gray-500 hover:text-teal-600 px-3 py-1 rounded-full hover:bg-teal-50">
+                                <i class="fas fa-tag mr-1"></i> Tag Player
+                            </button>
+                            <button class="flex items-center text-gray-500 hover:text-teal-600 px-3 py-1 rounded-full hover:bg-teal-50">
+                                <i class="fas fa-basketball-ball mr-1"></i> Sport
+                            </button>
+                            <button class="flex items-center text-gray-500 hover:text-teal-600 px-3 py-1 rounded-full hover:bg-teal-50">
+                                <i class="fas fa-map-marker-alt mr-1"></i> Location
+                            </button>
+                            <div class="relative">
+                                <select class="bg-gray-100 text-gray-600 text-sm px-3 py-1 rounded-full appearance-none hover:bg-teal-50 focus:outline-none">
+                                    <option><i class="fas fa-globe"></i> Public</option>
+                                    <option><i class="fas fa-users"></i> Connections</option>
+                                    <option><i class="fas fa-lock"></i> Private</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                    <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="teal-bg text-white px-4 py-1 rounded-full hover:bg-teal-700 font-medium">
+                            Post
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feed Posts -->
+            <div class="space-y-6">
+                <!-- Recommendation Post -->
+                <div class="bg-white rounded-xl p-4 post-shadow">
+                    <div class="flex items-start mb-4">
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Profile" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <h3 class="font-semibold">Sarah Williams</h3>
+                            <p class="text-sm text-gray-500">Soccer • UCLA • Los Angeles</p>
+                            <p class="text-sm text-gray-500">Posted 2 hours ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="mb-2">I highly recommend <a href="#" class="teal-accent font-medium">@AlexMorgan</a> for their outstanding performance in our last tournament. Their leadership on and off the field was exceptional.</p>
+                        <div class="flex items-center text-sm text-gray-500">
+                            <span class="mr-2"><i class="fas fa-tag mr-1"></i> Soccer</span>
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> Los Angeles</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-3 mb-4">
+                        <div class="flex items-center">
+                            <img src="https://randomuser.me/api/portraits/women/33.jpg" alt="Recommended" class="w-12 h-12 rounded-full mr-3">
+                            <div>
+                                <p class="font-medium">Alex Morgan</p>
+                                <p class="text-sm text-gray-600">Forward • USWNT</p>
+                                <div class="flex space-x-2 mt-1">
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Top Scorer</span>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Captain</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between text-gray-500 border-t pt-3">
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-thumbs-up mr-1"></i> 24
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-comment mr-1"></i> 8
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-share mr-1"></i> Share
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-user-plus mr-1"></i> Connect
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Highlight Video Post -->
+                <div class="bg-white rounded-xl p-4 post-shadow">
+                    <div class="flex items-start mb-4">
+                        <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Profile" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <h3 class="font-semibold">Michael Jordan</h3>
+                            <p class="text-sm text-gray-500">Basketball • Chicago Bulls</p>
+                            <p class="text-sm text-gray-500">Posted 5 hours ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="mb-3">Check out this game-winning shot from last night's match against the Lakers. Clutch moment!</p>
+                        
+                        <div class="relative">
+                            <img src="https://via.placeholder.com/600x400" alt="Video thumbnail" class="w-full rounded-lg">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <button class="teal-bg text-white p-3 rounded-full hover:bg-teal-700">
+                                    <i class="fas fa-play text-xl"></i>
+                                </button>
+                            </div>
+                            <div class="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                                <i class="fas fa-eye mr-1"></i> 1.2K views
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center text-sm text-gray-500 mt-2">
+                            <span class="mr-2"><i class="fas fa-tag mr-1"></i> Basketball</span>
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> Chicago</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between text-gray-500 border-t pt-3">
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-thumbs-up mr-1"></i> 142
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-comment mr-1"></i> 36
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-share mr-1"></i> Share
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-user-plus mr-1"></i> Connect
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Stats Post -->
+                <div class="bg-white rounded-xl p-4 post-shadow">
+                    <div class="flex items-start mb-4">
+                        <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Profile" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <h3 class="font-semibold">Serena Williams</h3>
+                            <p class="text-sm text-gray-500">Tennis • WTA</p>
+                            <p class="text-sm text-gray-500">Posted yesterday</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="mb-3">Just completed my best tournament this season! Here are my stats:</p>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-500">Aces</p>
+                                    <p class="text-xl font-bold teal-accent">12</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">First Serve %</p>
+                                    <p class="text-xl font-bold teal-accent">78%</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Winners</p>
+                                    <p class="text-xl font-bold teal-accent">32</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Unforced Errors</p>
+                                    <p class="text-xl font-bold teal-accent">14</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center text-sm text-gray-500 mt-2">
+                            <span class="mr-2"><i class="fas fa-tag mr-1"></i> Tennis</span>
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> Wimbledon</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between text-gray-500 border-t pt-3">
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-thumbs-up mr-1"></i> 89
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-comment mr-1"></i> 15
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-share mr-1"></i> Share
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-user-plus mr-1"></i> Connect
+                        </button>
+                    </div>
+                </div>
+
+                <!-- New Training Post -->
+                <div class="bg-white rounded-xl p-4 post-shadow">
+                    <div class="flex items-start mb-4">
+                        <img src="https://randomuser.me/api/portraits/men/55.jpg" alt="Profile" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <h3 class="font-semibold">LeBron James</h3>
+                            <p class="text-sm text-gray-500">Basketball • Los Angeles Lakers</p>
+                            <p class="text-sm text-gray-500">Posted 4 hours ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="mb-3">Morning workout session with the team. Putting in the work to stay at the top of our game!</p>
+                        
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <img src="https://via.placeholder.com/300x200" alt="Training" class="w-full rounded-lg">
+                            <img src="https://via.placeholder.com/300x200" alt="Training" class="w-full rounded-lg">
+                        </div>
+                        
+                        <div class="flex items-center text-sm text-gray-500">
+                            <span class="mr-2"><i class="fas fa-tag mr-1"></i> Basketball</span>
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> Los Angeles</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between text-gray-500 border-t pt-3">
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-thumbs-up mr-1"></i> 312
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-comment mr-1"></i> 45
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-share mr-1"></i> Share
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-user-plus mr-1"></i> Connect
+                        </button>
+                    </div>
+                </div>
+
+                <!-- New Achievement Post -->
+                <div class="bg-white rounded-xl p-4 post-shadow">
+                    <div class="flex items-start mb-4">
+                        <img src="https://randomuser.me/api/portraits/women/19.jpg" alt="Profile" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <h3 class="font-semibold">Simone Biles</h3>
+                            <p class="text-sm text-gray-500">Gymnastics • Team USA</p>
+                            <p class="text-sm text-gray-500">Posted 6 hours ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="mb-3">Proud to announce I've been named Gymnast of the Year for the 5th time! None of this would be possible without my incredible team and coaches.</p>
+                        
+                        <img src="https://via.placeholder.com/600x400" alt="Award" class="w-full rounded-lg mb-3">
+                        
+                        <div class="flex items-center text-sm text-gray-500">
+                            <span class="mr-2"><i class="fas fa-tag mr-1"></i> Gymnastics</span>
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> World Championships</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between text-gray-500 border-t pt-3">
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-thumbs-up mr-1"></i> 428
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="far fa-comment mr-1"></i> 87
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-share mr-1"></i> Share
+                        </button>
+                        <button class="flex items-center hover:text-teal-600">
+                            <i class="fas fa-user-plus mr-1"></i> Connect
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Sidebar -->
+        <div class="w-full md:w-1/4 lg:w-1/5 pl-0 md:pl-6">
+            <div class="bg-white rounded-xl p-4 sidebar-shadow mb-6">
+                <h3 class="font-semibold mb-3 flex items-center">
+                    <i class="fas fa-bell mr-2 teal-accent"></i> Notifications
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <div class="bg-blue-100 p-2 rounded-full mr-2">
+                            <i class="fas fa-user-plus text-blue-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm"><span class="font-medium">David Lee</span> wants to connect</p>
+                            <p class="text-xs text-gray-500">10 min ago</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-green-100 p-2 rounded-full mr-2">
+                            <i class="fas fa-thumbs-up text-green-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm"><span class="font-medium">3 teammates</span> liked your post</p>
+                            <p class="text-xs text-gray-500">1 hour ago</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-purple-100 p-2 rounded-full mr-2">
+                            <i class="fas fa-trophy text-purple-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm">New opportunity: <span class="font-medium">NBA Combine 2023</span></p>
+                            <p class="text-xs text-gray-500">3 hours ago</p>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="text-sm teal-accent font-medium mt-2 block">See all</a>
+            </div>
+            
+            <div class="bg-white rounded-xl p-4 sidebar-shadow mb-6">
+                <h3 class="font-semibold mb-3 flex items-center">
+                    <i class="fas fa-user-friends mr-2 teal-accent"></i> Suggested Connections
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <img src="https://randomuser.me/api/portraits/men/41.jpg" alt="Player" class="w-10 h-10 rounded-full mr-2">
+                            <div>
+                                <p class="text-sm font-medium">Kevin Durant</p>
+                                <p class="text-xs text-gray-500">Basketball • Brooklyn</p>
+                            </div>
+                        </div>
+                        <button class="text-xs teal-bg text-white px-2 py-1 rounded-full hover:bg-teal-700">
+                            Connect
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <img src="https://randomuser.me/api/portraits/women/22.jpg" alt="Player" class="w-10 h-10 rounded-full mr-2">
+                            <div>
+                                <p class="text-sm font-medium">Naomi Osaka</p>
+                                <p class="text-xs text-gray-500">Tennis • Japan</p>
+                            </div>
+                        </div>
+                        <button class="text-xs teal-bg text-white px-2 py-1 rounded-full hover:bg-teal-700">
+                            Connect
+                        </button>
+                    </div>
+                </div>
+                <a href="#" class="text-sm teal-accent font-medium mt-2 block">View all</a>
+            </div>
+            
+            <div class="bg-white rounded-xl p-4 sidebar-shadow">
+                <h3 class="font-semibold mb-3 flex items-center">
+                    <i class="fas fa-calendar-alt mr-2 teal-accent"></i> Upcoming Events
+                </h3>
+                <div class="space-y-3">
+                    <div class="p-2 bg-blue-50 rounded-lg">
+                        <p class="text-sm font-medium">NBA Draft Combine</p>
+                        <p class="text-xs text-gray-500">May 15-21 • Chicago</p>
+                        <button class="text-xs teal-bg text-white px-2 py-1 rounded-full mt-1 hover:bg-teal-700">
+                            Register
+                        </button>
+                    </div>
+                    <div class="p-2">
+                        <p class="text-sm font-medium">EuroLeague Tryouts</p>
+                        <p class="text-xs text-gray-500">June 5-8 • Madrid</p>
+                        <button class="text-xs border border-teal-500 text-teal-600 px-2 py-1 rounded-full mt-1 hover:bg-teal-50">
+                            Learn More
+                        </button>
+                    </div>
+                </div>
+                <a href="#" class="text-sm teal-accent font-medium mt-2 block">Browse events</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg">
+        <div class="flex justify-around items-center p-3">
+            <a href="#" class="flex flex-col items-center text-gray-600 hover:text-teal-600">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-xs mt-1">Home</span>
+            </a>
+            <a href="#" class="flex flex-col items-center text-gray-600 hover:text-teal-600">
+                <i class="fas fa-network-wired text-xl"></i>
+                <span class="text-xs mt-1">Network</span>
+            </a>
+            <a href="#" class="flex flex-col items-center text-gray-600 hover:text-teal-600">
+                <i class="fas fa-plus-circle text-xl teal-accent"></i>
+                <span class="text-xs mt-1">Post</span>
+            </a>
+            <a href="#" class="flex flex-col items-center text-gray-600 hover:text-teal-600">
+                <i class="fas fa-bell text-xl"></i>
+                <span class="text-xs mt-1">Notifications</span>
+            </a>
+            <a href="#" class="flex flex-col items-center text-gray-600 hover:text-teal-600">
+                <i class="fas fa-user text-xl"></i>
+                <span class="text-xs mt-1">Profile</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Simple script for demonstration purposes
+        document.addEventListener('DOMContentLoaded', function() {
+            // Like button functionality
+            document.querySelectorAll('.fa-thumbs-up').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.classList.contains('far')) {
+                        this.classList.remove('far');
+                        this.classList.add('fas', 'text-blue-500');
+                    } else {
+                        this.classList.remove('fas', 'text-blue-500');
+                        this.classList.add('far');
+                    }
+                });
+            });
+            
+            // Mobile menu toggle would go here in a real implementation
+        });
+    </script>
+</body>
+</html>
