@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages | AthlNet</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-tertiary: #adb5bd;
+            --border-color: #dee2e6;
+            --accent-color: #1ABC9C; /* Teal */
+            --logo-dark-color: #2c3e50; /* Dark Slate Blue */
+            --chat-bg-overlay: rgba(248, 249, 250, 0.85);
+            --header-overlay-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .accent-text { color: var(--accent-color); }
+
+        .accent-underline::after {
+            content: ''; position: absolute; left: 0; bottom: -4px;
+            height: 3px; width: 60%; border-radius: 2px;
+            background-color: var(--accent-color);
+        }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .pulse-online { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 10px; }
+
+        @keyframes slide-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .message-animate { animation: slide-in 0.3s ease-out forwards; }
+        
+        .chat-bg {
+            background-image: url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1935&auto=format&fit=crop');
+            background-size: cover; background-position: center; position: relative;
+        }
+        .chat-bg::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--chat-bg-overlay);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-hidden { display: none; }
+            .mobile-full { width: 100%; height: 100%; border-left: none; }
+            .chat-view-active .thread-list { display: none; }
+            .chat-view-active .chat-window { display: flex; }
+        }
+
+        .modal { transition: opacity 0.25s ease; }
+        .modal-content { transition: transform 0.25s ease; }
+        
+        @keyframes fade-in-out {
+            0% { opacity: 0; transform: translateY(20px); } 10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-20px); }
+        }
+        .toast { animation: fade-in-out 3s forwards; }
+        
+        .action-btn { color: var(--text-secondary); }
+        .action-btn:hover { color: var(--accent-color); }
+        .nav-link { color: var(--logo-dark-color); }
+        .nav-link:hover { color: var(--accent-color); }
+        .nav-link.active { color: var(--accent-color); font-weight: 600; }
+        .active-thread { background-color: var(--bg-tertiary) !important; }
+    </style>
+</head>
+<body class="h-screen overflow-hidden">
+
+    <div class="flex flex-col h-full">
+        <!-- Top Navigation Bar -->
+        <nav class="w-full shadow-sm z-20 bg-white">
+            <div class="max-w-screen-2xl mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-8">
+                    <a href="#" class="text-2xl font-bold" style="color: var(--logo-dark-color);">
+                        <span style="color: var(--accent-color);">Athl</span>Net
+                    </a>
+                    <ul class="hidden md:flex items-center space-x-8 text-md font-medium">
+                        <li><a href="#" class="nav-link transition-colors">Home</a></li>
+                        <li><a href="#" class="nav-link transition-colors">Discover</a></li>
+                        <li><a href="#" class="nav-link transition-colors">Upload Video</a></li>
+                        <li><a href="#" class="nav-link transition-colors">Opportunities</a></li>
+                        <li><a href="#" class="nav-link active transition-colors">Messages</a></li>
+                        <li><a href="#" class="nav-link transition-colors">Profile</a></li>
+                    </ul>
+                </div>
+                <div class="flex items-center">
+                    <img src="https://placehold.co/40x40/1ABC9C/FFFFFF?text=A" alt="My Profile" class="w-10 h-10 rounded-full cursor-pointer border-2 border-transparent hover:border-teal-400 transition-all">
+                </div>
+            </div>
+        </nav>
+
+        <!-- Messaging Interface Container -->
+        <div id="app-container" class="flex flex-grow h-full max-w-screen-2xl mx-auto w-full">
+            <!-- Left Panel: Message Thread List -->
+            <aside id="thread-list" class="thread-list w-full md:w-1/3 lg:w-1/4 p-3 flex flex-col flex-shrink-0" style="background-color: var(--bg-secondary);">
+                <div class="px-4 pt-4 mb-4">
+                    <h2 class="text-3xl font-bold relative inline-block accent-underline" style="color: var(--text-primary);">Messages</h2>
+                </div>
+                
+                <div class="relative px-4 pb-4">
+                    <input id="search-bar" type="text" placeholder="Search messages..." class="w-full border rounded-full py-2 pl-4 pr-10 focus:outline-none transition-all" style="background-color: var(--bg-tertiary); border-color: transparent; color: var(--text-primary); --tw-ring-color: var(--accent-color);">
+                    <i class="fas fa-search absolute right-8 top-1/2 -translate-y-1/2" style="color: var(--text-tertiary);"></i>
+                </div>
+
+                <div id="threads-container" class="flex-grow overflow-y-auto pr-2 space-y-2">
+                    <!-- Chat cards will be dynamically inserted here -->
+                </div>
+            </aside>
+
+            <!-- Right Panel: Chat Window -->
+            <main id="chat-window" class="chat-window mobile-hidden md:flex flex-col flex-grow w-full md:w-2/3 lg:w-3/4 chat-bg" style="border-left: 1px solid var(--border-color);">
+                <div id="chat-placeholder" class="flex flex-col items-center justify-center h-full text-center p-8 relative">
+                     <i class="fas fa-comments text-8xl mb-4" style="color: var(--text-tertiary);"></i>
+                     <h2 class="text-2xl font-bold" style="color: var(--text-primary);">Select a chat to start messaging</h2>
+                     <p style="color: var(--text-secondary);">Connect with your team, coaches, and fellow athletes.</p>
+                </div>
+
+                <div id="chat-content" class="relative w-full h-full flex-col hidden">
+                    <header id="chat-header" class="flex items-center justify-between p-4 backdrop-blur-sm border-b z-10" style="background-color: var(--header-overlay-bg); border-color: rgba(128,128,128,0.2);"></header>
+                    <div id="message-area" class="flex-grow p-6 overflow-y-auto space-y-6"></div>
+                    <div class="p-4 backdrop-blur-sm border-t z-10" style="background-color: var(--header-overlay-bg); border-color: rgba(128,128,128,0.2);">
+                        <div class="rounded-xl flex items-center p-1" style="background-color: var(--bg-tertiary);">
+                            <button class="action-btn text-xl p-2 transition-colors" data-action="attach"><i class="fas fa-paperclip"></i></button>
+                            <button class="action-btn text-xl p-2 transition-colors" data-action="camera"><i class="fas fa-camera"></i></button>
+                            <input id="message-input" type="text" placeholder="Type a message..." class="flex-grow bg-transparent px-4 focus:outline-none" style="color: var(--text-primary);">
+                            <button id="send-button" class="text-white rounded-lg w-10 h-10 flex items-center justify-center text-xl hover:scale-110 transition-transform duration-200" style="background-color: var(--accent-color);">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Full-screen Image Modal -->
+    <div id="image-modal" class="modal fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center opacity-0 pointer-events-none">
+        <div class="modal-content transform scale-95"><img id="modal-img" src="" alt="Full-screen view" class="max-w-screen-lg max-h-screen-lg object-contain rounded-lg"></div>
+        <button id="close-modal" class="absolute top-5 right-8 text-white text-4xl font-bold">&times;</button>
+    </div>
+    
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // This version no longer has a theme toggle, it defaults to a light theme
+        // to match the provided header image. Dark mode styles are removed.
+        document.documentElement.classList.remove('dark');
+
+        const users = {
+            1: { name: "Elena Rodriguez 🏅", avatar: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1974&auto=format&fit=crop", sport: "🎾 Tennis", online: true, streak: 5 },
+            2: { name: "Coach Miller", avatar: "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?q=80&w=1974&auto=format&fit=crop", sport: "🏀 Basketball", online: false, streak: 0 },
+            3: { name: "Marcus Shaw 🔥", avatar: "https://images.unsplash.com/photo-1551843073-4a9a7b3f9ude?q=80&w=1974&auto=format=fit=crop", sport: "🏃‍♂️ Track & Field", online: true, streak: 12 },
+            4: { name: "Swim Team Group", avatar: "https://images.unsplash.com/photo-1560089023-74534e52646d?q=80&w=1974&auto=format=fit=crop", sport: "🏊‍♂️ Swimming", online: false, streak: 0 },
+        };
+        const messages = {
+            1: [
+                { from: 1, text: "Just saw the new training schedule. Looks intense! 🔥", time: "2:45 PM" },
+                { from: 'me', text: "Right? I'm excited though. We need to be in top shape for the qualifiers.", time: "2:46 PM" },
+                { from: 1, type: 'image', url: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop', time: "2:48 PM" },
+            ],
+            2: [{ from: 2, text: "Send over your performance stats from last week.", time: "1:30 PM" }, { from: 'me', text: "Will do, Coach. Sending them now.", time: "1:32 PM" }],
+            3: [{ from: 3, text: "Great collab on the promo video! Let's do another.", time: "11:00 AM" }],
+            4: [{ from: 4, text: "Practice is moved to 7 AM tomorrow. Don't be late!", time: "Yesterday" }],
+        };
+        
+        const appContainer = document.getElementById('app-container');
+        const threadsContainer = document.getElementById('threads-container');
+        const searchBar = document.getElementById('search-bar');
+        const chatPlaceholder = document.getElementById('chat-placeholder');
+        const chatContent = document.getElementById('chat-content');
+        const chatHeader = document.getElementById('chat-header');
+        const messageArea = document.getElementById('message-area');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const imageModal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img');
+        const closeModalBtn = document.getElementById('close-modal');
+        const toastContainer = document.getElementById('toast-container');
+        let currentChatId = null;
+
+        const renderThreads = (filter = '') => {
+            threadsContainer.innerHTML = '';
+            Object.keys(users).forEach(id => {
+                const user = users[id];
+                if (user.name.toLowerCase().includes(filter.toLowerCase())) {
+                    const lastMessage = messages[id][messages[id].length - 1];
+                    const card = document.createElement('div');
+                    card.className = `chat-card flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200`;
+                    if (currentChatId == id) card.classList.add('active-thread');
+                    card.dataset.userId = id;
+                    
+                    card.innerHTML = `
+                        <div class="relative">
+                            <img src="${user.avatar}" alt="User Avatar" class="w-12 h-12 rounded-full object-cover">
+                            ${user.online ? `<span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 pulse-online" style="background-color: var(--accent-color); ring-color: var(--bg-secondary);"></span>` : ''}
+                        </div>
+                        <div class="flex-grow ml-4 overflow-hidden">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-semibold truncate" style="color: var(--text-primary);">${user.name}</h3>
+                                <span class="text-xs flex-shrink-0" style="color: var(--text-secondary);">${lastMessage.time}</span>
+                            </div>
+                            <p class="text-sm truncate" style="color: var(--text-secondary);">${lastMessage.text || 'Image'}</p>
+                        </div>
+                    `;
+                    threadsContainer.appendChild(card);
+                }
+            });
+        };
+
+        const loadChat = (userId) => {
+            currentChatId = userId;
+            const user = users[userId];
+            chatPlaceholder.style.display = 'none';
+            chatContent.style.display = 'flex';
+            
+            chatHeader.innerHTML = `
+                <div class="flex items-center">
+                    <button id="back-to-threads" class="md:hidden mr-4 text-xl" style="color: var(--text-primary);"><i class="fas fa-chevron-left"></i></button>
+                    <img src="${user.avatar}" alt="User Avatar" class="w-11 h-11 rounded-full object-cover">
+                    <div class="ml-3">
+                        <h2 class="font-semibold text-md" style="color: var(--text-primary);">${user.name}</h2>
+                        <p class="text-xs flex items-center" style="color: ${user.online ? 'var(--accent-color)' : 'var(--text-secondary)'};">
+                            ${user.online ? `<span class="h-2 w-2 rounded-full mr-1.5 pulse-online" style="background-color: var(--accent-color);"></span> Online` : 'Offline'}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-5 text-xl">
+                    <i class="action-btn fas fa-phone cursor-pointer transition-colors" data-action="call"></i>
+                    <i class="action-btn fas fa-video cursor-pointer transition-colors" data-action="video"></i>
+                    <i class="action-btn fas fa-ellipsis-v cursor-pointer transition-colors" data-action="more"></i>
+                </div>
+            `;
+            
+            messageArea.innerHTML = '';
+            messages[userId].forEach(msg => appendMessage(msg, user));
+            messageArea.scrollTop = messageArea.scrollHeight;
+            renderThreads(searchBar.value);
+            if (window.innerWidth <= 768) showChatWindow();
+        };
+        
+        const appendMessage = (msg, user) => {
+            const messageElement = document.createElement('div');
+            const isOutgoing = msg.from === 'me';
+            messageElement.className = `flex items-end gap-3 message-animate ${isOutgoing ? 'justify-end' : ''}`;
+            
+            let messageContent = '';
+            if (msg.type === 'image') {
+                 messageContent = `<div class="group max-w-xs"><div class="relative p-2 rounded-lg shadow-sm" style="background-color: var(--bg-tertiary);"><img src="${msg.url}" alt="Training Photo" class="media-img rounded-md cursor-pointer transition-transform duration-300 hover:scale-105"></div></div>`;
+            } else {
+                 messageContent = `<div class="group max-w-lg"><div class="relative p-3 rounded-lg shadow-sm ${isOutgoing ? 'text-white rounded-br-none' : 'rounded-bl-none'}" style="background-color: ${isOutgoing ? 'var(--accent-color)' : 'var(--bg-tertiary)'};"><p class="text-sm" style="color: ${isOutgoing ? '#ffffff' : 'var(--text-primary)'};">${msg.text}</p></div></div>`;
+            }
+            messageElement.innerHTML = `${!isOutgoing ? `<img src="${user.avatar}" alt="Avatar" class="w-8 h-8 rounded-full object-cover self-start">` : ''}${messageContent}`;
+            messageArea.appendChild(messageElement);
+        };
+
+        threadsContainer.addEventListener('click', (e) => {
+            const card = e.target.closest('.chat-card');
+            if (card) loadChat(card.dataset.userId);
+        });
+
+        chatHeader.addEventListener('click', (e) => {
+             if (e.target.closest('#back-to-threads')) showThreadList();
+        });
+
+        searchBar.addEventListener('input', (e) => renderThreads(e.target.value));
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        document.body.addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('.action-btn');
+            if (actionBtn) handleAction(actionBtn.dataset.action);
+            const mediaImg = e.target.closest('.media-img');
+            if (mediaImg) openModal(mediaImg.src);
+        });
+        
+        closeModalBtn.addEventListener('click', closeModal);
+        imageModal.addEventListener('click', (e) => { if (e.target === imageModal) closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && currentChatId) showThreadList(); });
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (text === '' || !currentChatId) return;
+            const newMessage = { from: 'me', text, time: 'Just now' };
+            messages[currentChatId].push(newMessage);
+            appendMessage(newMessage, users[currentChatId]);
+            messageInput.value = '';
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
+        
+        function handleAction(action) {
+            showToast(`Action: ${action} (not implemented)`);
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast bg-gray-800 text-white text-sm font-semibold py-2 px-4 rounded-full shadow-lg';
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function openModal(src) {
+            modalImg.src = src;
+            imageModal.classList.remove('opacity-0', 'pointer-events-none');
+            imageModal.querySelector('.modal-content').classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            imageModal.classList.add('opacity-0');
+            imageModal.querySelector('.modal-content').classList.add('scale-95');
+            setTimeout(() => imageModal.classList.add('pointer-events-none'), 250);
+        }
+
+        function showChatWindow() { document.getElementById('app-container').classList.add('chat-view-active'); }
+        function showThreadList() {
+            document.getElementById('app-container').classList.remove('chat-view-active');
+            currentChatId = null;
+            chatContent.style.display = 'none';
+            chatPlaceholder.style.display = 'flex';
+            renderThreads();
+        }
+        
+        renderThreads();
+    });
+    </script>
+</body>
+</html>
