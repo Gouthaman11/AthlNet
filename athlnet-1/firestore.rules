@@ -1,0 +1,181 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =================================================================
+    // Helper Functions
+    // =================================================================
+
+    // Helper function to check if a user is authenticated.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if the requesting user is the owner of a document.
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // =================================================================
+    // Collection Rules
+    // =================================================================
+
+    // Users collection rules - RELAXED for new user creation
+    match /users/{userId} {
+      // Allow anyone to read user profiles for discovery and social features.
+      allow read: if true;
+      
+      // Allow any authenticated user to create user profiles - VERY PERMISSIVE for new users
+      allow create: if isAuthenticated();
+      
+      // Allow users to update their own profile, or allow any authenticated user
+      // to update specific fields related to social interactions (e.g., following).
+      // Also allow any authenticated user to create/update basic user documents for messaging
+      allow update: if isAuthenticated() && (
+        isOwner(userId) || 
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['following'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers', 'following'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['testCounter', 'lastTestTime'])) ||
+        // Allow creating basic user documents for messaging (isNewUser, displayName, etc.)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isNewUser', 'displayName', 'createdAt', 'updatedAt']))
+      );
+      
+      // Allow users to delete their own profile.
+      allow delete: if isOwner(userId);
+    }
+    
+    // Posts collection rules
+    match /posts/{postId} {
+      // Allow anyone to read posts in a public social feed.
+      allow read: if true;
+      
+      // Allow authenticated users to create posts where they are the author.
+      allow create: if isAuthenticated() && 
+        request.resource.data.authorUid == request.auth.uid;
+      
+      // Allow post authors to update their own posts, and allow any
+      // authenticated user to update interaction fields like 'likes'.
+      // Note: Combining the two original 'update' rules.
+      allow update: if (isAuthenticated() && resource.data.authorUid == request.auth.uid) || (
+        isAuthenticated() && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comments']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentsCount'])
+        )
+      );
+        
+      // Allow post authors to delete their own posts.
+      allow delete: if isAuthenticated() && 
+        resource.data.authorUid == request.auth.uid;
+    }
+    
+    // Conversations collection rules - RELAXED for messaging functionality
+    match /conversations/{conversationId} {
+      // Allow any authenticated user to read conversations they are part of
+      allow read: if isAuthenticated() && (
+        request.auth.uid in resource.data.members ||
+        request.auth.uid in resource.data.participants ||
+        // Allow reading if the conversation ID contains the user's ID (for new conversations)
+        conversationId.matches('.*' + request.auth.uid + '.*')
+      );
+      
+      // Allow any authenticated user to create conversations where they are a member
+      // This is more permissive to handle new user scenarios
+      allow create: if isAuthenticated() && (
+        request.auth.uid in request.resource.data.members ||
+        request.auth.uid in request.resource.data.participants ||
+        // Allow if the user is creating a conversation that includes their ID
+        conversationId.matches('.*' + request.auth.uid + '.*')
+      );
+      
+      // Allow users to update conversations they are a part of
+      allow update: if isAuthenticated() && (
+        request.auth.uid in resource.data.members ||
+        request.auth.uid in resource.data.participants ||
+        // Allow update if user is in the new data being written
+        request.auth.uid in request.resource.data.members ||
+        request.auth.uid in request.resource.data.participants
+      );
+      
+      // Allow users to delete conversations they are a part of
+      allow delete: if isAuthenticated() && (
+        request.auth.uid in resource.data.members ||
+        request.auth.uid in resource.data.participants
+      );
+      
+      // Messages subcollection - RELAXED rules
+      match /messages/{messageId} {
+        // Allow any authenticated user to read messages in conversations they're part of
+        allow read: if isAuthenticated() && (
+          // Check if user is in conversation members
+          (exists(/databases/$(database)/documents/conversations/$(conversationId)) && (
+            request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.members ||
+            request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          )) ||
+          // OR if conversation doesn't exist yet but user ID is in the conversation ID
+          (!exists(/databases/$(database)/documents/conversations/$(conversationId)) && 
+           conversationId.matches('.*' + request.auth.uid + '.*')) ||
+          // OR if user is sender/recipient of the message
+          request.auth.uid == resource.data.senderId ||
+          request.auth.uid == resource.data.recipientId
+        );
+        
+        // Allow any authenticated user to create messages as themselves - VERY PERMISSIVE
+        allow create: if isAuthenticated() && 
+          request.resource.data.senderId == request.auth.uid;
+        
+        // Allow message sender or recipients to update messages
+        allow update: if isAuthenticated() && (
+          request.auth.uid == resource.data.senderId ||
+          request.auth.uid == resource.data.recipientId ||
+          request.auth.uid == resource.data.to ||
+          request.auth.uid == resource.data.from
+        );
+        
+        // Allow the sender to delete their messages
+        allow delete: if isAuthenticated() && (
+          request.auth.uid == resource.data.senderId ||
+          request.auth.uid == resource.data.from
+        );
+      }
+    }
+    
+    // Comments collection rules for posts.
+    match /comments/{commentId} {
+      // Allow anyone to read comments.
+      allow read: if true;
+      
+      // Allow authenticated users to create, update, and delete their own comments.
+      allow create, update, delete: if isAuthenticated() && 
+        request.resource.data.authorUid == request.auth.uid;
+    }
+    
+    // Notifications collection rules for user-specific notifications.
+    match /notifications/{notificationId} {
+      // Allow users to read, update, and delete their own notifications.
+      allow read, update, delete: if isAuthenticated() && 
+        resource.data.recipientId == request.auth.uid;
+      
+      // Allow any authenticated process/user to create a notification.
+      // You may want to lock this down further depending on your app's logic.
+      allow create: if isAuthenticated();
+    }
+    
+    // Analytics collection rules (example).
+    match /analytics/{document=**} {
+      // Allow authenticated users to read and write analytics data.
+      // Best practice is to have a secure admin/backend process handle writes.
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Default Rule: This is a critical security measure. It denies all reads
+    // and writes to any collection not explicitly defined above.
+    // There should only be ONE of these at the end of the rules file.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

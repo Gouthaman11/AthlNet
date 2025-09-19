@@ -1,0 +1,22 @@
+// SIMPLIFIED Firebase Storage Rules for Testing
+// Copy these rules to Firebase Console -> Storage -> Rules
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow any authenticated user to read and write anywhere (most permissive)
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+// INSTRUCTIONS:
+// 1. Go to Firebase Console -> Your Project -> Storage
+// 2. Click "Rules" tab  
+// 3. REPLACE ALL existing rules with the above rules
+// 4. Click "Publish"
+//
+// This is the most permissive rule for testing - any authenticated user can upload anywhere
+// Once it works, you can use the more restrictive rules from firebase-storage-rules.txt

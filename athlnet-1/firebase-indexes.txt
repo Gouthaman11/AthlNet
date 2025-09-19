@@ -1,0 +1,50 @@
+# Firestore Database Indexes for Optimal Performance
+# Copy these configurations to Firebase Console -> Firestore -> Indexes
+
+## Composite Indexes Needed:
+
+### 1. Messages Collection
+**Collection ID:** messages
+**Fields:**
+- conversationId (Ascending)
+- createdAt (Descending)
+
+**Collection ID:** messages  
+**Fields:**
+- to (Ascending)
+- read (Ascending)
+- conversationId (Ascending)
+
+**Collection ID:** messages
+**Fields:**
+- conversationId (Ascending)
+- to (Ascending)
+- read (Ascending)
+
+### 2. Conversations Collection
+**Collection ID:** conversations
+**Fields:**
+- participants (Array)
+- lastMessageAt (Descending)
+
+### 3. Posts Collection (if needed)
+**Collection ID:** posts
+**Fields:**
+- authorId (Ascending)
+- createdAt (Descending)
+
+## How to Add These Indexes:
+
+1. Go to Firebase Console: https://console.firebase.google.com/
+2. Select your project: athlnet
+3. Go to Firestore Database -> Indexes tab
+4. Click "Create Index" for each composite index above
+5. Add the fields exactly as specified
+6. Set the Query Scope to "Collection"
+7. Click "Create"
+
+## Auto-Generated Indexes:
+Firebase will automatically create single-field indexes. You may also see auto-generated composite indexes when you run queries that need them.
+
+## Note:
+Some of these indexes might already exist or be auto-generated when you first run queries. Firebase will show errors in the console if additional indexes are needed.
