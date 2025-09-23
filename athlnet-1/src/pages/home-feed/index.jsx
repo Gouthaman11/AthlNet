@@ -14,7 +14,7 @@ import Button from '../../components/ui/Button';
 
 const HomeFeed = () => {
   const navigate = useNavigate();
-  const { profile, posts, loading, user } = useHomeFeedData();
+  const { profile, posts, loading, user, refreshPosts } = useHomeFeedData();
   const [activeFilters, setActiveFilters] = React.useState({
     contentType: 'all',
     sports: 'all',
@@ -29,16 +29,47 @@ const HomeFeed = () => {
 
   // Filter posts based on active filters (optional)
   const [localPosts, setLocalPosts] = React.useState([]);
-  const handleLike = async (postId, isLiked) => {
+  const handleLike = async (postId, currentLikeState) => {
     try {
       const { auth } = await import('../../firebaseClient');
       const user = auth?.currentUser;
       if (!user) return;
       
       const { likePost } = await import('../../utils/firestoreSocialApi');
-      await likePost(postId, user.uid);
+      const result = await likePost(postId, user.uid);
+      
+      // Update the local posts state to reflect the new like status
+      setLocalPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId 
+            ? { 
+                ...post, 
+                likes: result.isLiked 
+                  ? [...(post.likes || []), user.uid]
+                  : (post.likes || []).filter(id => id !== user.uid)
+              }
+            : post
+        )
+      );
+      
+      // Also update the main posts state if it exists
+      setPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId 
+            ? { 
+                ...post, 
+                likes: result.isLiked 
+                  ? [...(post.likes || []), user.uid]
+                  : (post.likes || []).filter(id => id !== user.uid)
+              }
+            : post
+        )
+      );
+      
+      return result;
     } catch (e) {
       console.error('Like failed:', e);
+      throw e; // Re-throw to let PostCard handle the error
     }
   };
 
@@ -97,18 +128,41 @@ const HomeFeed = () => {
   };
 
   const handleDelete = async (postId) => {
+    if (!postId) {
+      console.error('❌ No post ID provided for deletion');
+      alert('Unable to delete post: Invalid post ID');
+      return;
+    }
+
     try {
+      console.log('🗑️ Starting delete process for post:', postId);
+      
       const { auth } = await import('../../firebaseClient');
       const user = auth?.currentUser;
-      if (!user) return;
+      
+      if (!user) {
+        console.error('❌ No authenticated user for delete operation');
+        alert('Please log in to delete posts');
+        return;
+      }
+
+      console.log('👤 User attempting deletion:', user.uid);
       
       const { deletePost } = await import('../../utils/firestoreSocialApi');
-      await deletePost(postId);
+      await deletePost(postId, user.uid);
       
-      // Refresh posts to show the deletion
-      window.location.reload();
+      console.log('✅ Post deletion successful, refreshing posts...');
+      
+      // Use refresh function instead of page reload
+      await refreshPosts();
+      
+      // Show success message
+      alert('Post deleted successfully!');
+      
     } catch (e) {
-      console.error('Delete failed:', e);
+      console.error('❌ Delete operation failed:', e);
+      const errorMessage = e?.message || 'Failed to delete post';
+      alert(`Delete failed: ${errorMessage}`);
       throw e;
     }
   };

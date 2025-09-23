@@ -4,10 +4,11 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebaseClient';
 import { 
   searchUsers, 
-  getSuggestedUsers, 
+  getSuggestedUsers,
   getUsersBySport, 
   toggleFollowUser 
 } from '../../utils/firestoreSocialApi';
+import { fetchSuggestedUsers, cleanUserProfile } from '../../utils/profileUtils';
 import Header from '../../components/ui/Header';
 import SearchBar from './components/SearchBar';
 import FilterPanel from './components/FilterPanel';
@@ -104,10 +105,27 @@ const SearchAndDiscovery = () => {
     
     setSuggestions(true);
     try {
-      const suggested = await getSuggestedUsers(user.uid, 12);
+      console.log('🔍 Loading suggested users for:', user.uid);
+      
+      // Try the new clean utility first
+      let suggested = [];
+      try {
+        suggested = await fetchSuggestedUsers(user.uid, 12);
+        console.log('✅ Clean utility returned:', suggested.length, 'users');
+      } catch (utilError) {
+        console.warn('⚠️ Clean utility failed, falling back to original API:', utilError);
+        
+        // Fallback to original API
+        const rawSuggested = await getSuggestedUsers(user.uid, 12);
+        suggested = rawSuggested.map(user => cleanUserProfile(user)).filter(Boolean);
+        console.log('✅ Fallback API returned:', suggested.length, 'users');
+      }
+      
       setSuggestedUsers(suggested);
     } catch (error) {
-      console.error('Error loading suggested users:', error);
+      console.error('❌ Error loading suggested users:', error);
+      // Set empty array so UI shows "no suggestions" instead of loading forever
+      setSuggestedUsers([]);
     } finally {
       setSuggestions(false);
     }
@@ -121,11 +139,21 @@ const SearchAndDiscovery = () => {
 
     setLoading(true);
     try {
+      console.log('🔍 Searching for:', term);
       const results = await searchUsers(term, 20);
-      setSearchResults(results.filter(u => u.uid !== user?.uid)); // Exclude current user
+      console.log('📋 Raw search results:', results.length);
+      
+      // Clean the results to remove Firebase IDs and unwanted data
+      const cleanedResults = results
+        .filter(u => u.uid !== user?.uid) // Exclude current user
+        .map(user => cleanUserProfile(user))
+        .filter(Boolean); // Remove null results
+        
+      console.log('✅ Cleaned search results:', cleanedResults.length);
+      setSearchResults(cleanedResults);
       setActiveTab('search');
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error('❌ Error searching users:', error);
       setSearchResults([]);
     } finally {
       setLoading(false);
@@ -141,11 +169,21 @@ const SearchAndDiscovery = () => {
     setLoading(true);
     setSelectedSport(sport);
     try {
+      console.log('🏈 Filtering by sport:', sport);
       const results = await getUsersBySport(sport, 15);
-      setSportUsers(results.filter(u => u.uid !== user?.uid)); // Exclude current user
+      console.log('📋 Raw sport results:', results.length);
+      
+      // Clean and filter results
+      const cleanedResults = results
+        .filter(u => u.uid !== user?.uid) // Exclude current user
+        .map(user => cleanUserProfile(user))
+        .filter(Boolean); // Remove null results
+        
+      console.log('✅ Cleaned sport results:', cleanedResults.length);
+      setSportUsers(cleanedResults);
       setActiveTab('sport');
     } catch (error) {
-      console.error('Error filtering by sport:', error);
+      console.error('❌ Error filtering by sport:', error);
       setSportUsers([]);
     } finally {
       setLoading(false);
@@ -153,19 +191,34 @@ const SearchAndDiscovery = () => {
   };
 
   const handleFollowUser = async (targetUserId) => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.error('❌ No current user for follow action');
+      alert('Please log in to follow users');
+      return;
+    }
+    
+    if (!targetUserId) {
+      console.error('❌ No target user ID for follow action');
+      return;
+    }
     
     try {
+      console.log('👥 Following user:', { from: user.uid, to: targetUserId });
       await toggleFollowUser(user.uid, targetUserId);
+      console.log('✅ Follow action completed');
       
       // Update the follow status in all our local state
       const updateUserFollowStatus = (users, setUsers) => {
         setUsers(prevUsers => 
-          prevUsers.map(u => 
-            (u.uid || u.id) === targetUserId 
-              ? { ...u, isFollowing: !u.isFollowing }
-              : u
-          )
+          prevUsers.map(u => {
+            const userId = u.uid || u.id;
+            if (userId === targetUserId) {
+              const newFollowStatus = !u.isFollowing;
+              console.log(`📱 Updated follow status for ${u.name}: ${newFollowStatus}`);
+              return { ...u, isFollowing: newFollowStatus };
+            }
+            return u;
+          })
         );
       };
 
@@ -174,7 +227,7 @@ const SearchAndDiscovery = () => {
       updateUserFollowStatus(sportUsers, setSportUsers);
       
     } catch (error) {
-      console.error('Error following/unfollowing user:', error);
+      console.error('❌ Error following/unfollowing user:', error);
       alert('Failed to follow user. Please try again.');
     }
   };

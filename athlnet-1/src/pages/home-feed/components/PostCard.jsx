@@ -1,20 +1,37 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
 
 const PostCard = ({ post, onLike, onComment, onShare, onEdit, onDelete, currentUser, showFullComments = false }) => {
-  const [isLiked, setIsLiked] = useState(false);
+  const navigate = useNavigate();
+  
+  // Initialize isLiked based on whether current user has liked the post
+  const [isLiked, setIsLiked] = useState(() => {
+    if (!currentUser?.uid || !post?.likes) return false;
+    return post.likes.includes(currentUser.uid);
+  });
+  
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [likeCount, setLikeCount] = useState(post?.likes?.length || 0);
+  const [isLiking, setIsLiking] = useState(false); // Add loading state for like button
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post?.content || '');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
   const dropdownRef = React.useRef(null);
 
-  const isAuthor = currentUser?.uid === post?.authorId;
+  const isAuthor = currentUser?.uid === post?.authorId || currentUser?.uid === post?.authorUid;
+
+  // Update local state when post prop changes (important for real-time updates)
+  React.useEffect(() => {
+    if (currentUser?.uid && post?.likes) {
+      setIsLiked(post.likes.includes(currentUser.uid));
+      setLikeCount(post.likes.length);
+    }
+  }, [post?.likes, currentUser?.uid]);
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -31,14 +48,39 @@ const PostCard = ({ post, onLike, onComment, onShare, onEdit, onDelete, currentU
   }, []);
 
   const handleLike = async () => {
-    setIsLiked(!isLiked);
-    setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+    if (isLiking || !currentUser?.uid) return; // Prevent double-clicking and ensure user is logged in
+    
+    setIsLiking(true);
+    
+    // Store original state for rollback
+    const originalIsLiked = isLiked;
+    const originalLikeCount = likeCount;
+    
+    // Optimistic update
+    const newIsLiked = !isLiked;
+    const newLikeCount = newIsLiked ? likeCount + 1 : likeCount - 1;
+    
+    setIsLiked(newIsLiked);
+    setLikeCount(newLikeCount);
+    
     try {
-      await onLike?.(post?.id, !isLiked);
-    } catch (e) {
-      // Revert on error
-      setIsLiked(isLiked);
-      setLikeCount(prev => isLiked ? prev + 1 : prev - 1);
+      const result = await onLike?.(post?.id, originalIsLiked);
+      
+      // If the API returns different values, use those (for consistency)
+      if (result && typeof result === 'object') {
+        setIsLiked(result.isLiked);
+        setLikeCount(result.likeCount);
+      }
+    } catch (error) {
+      console.error('Like failed:', error);
+      // Rollback optimistic update on error
+      setIsLiked(originalIsLiked);
+      setLikeCount(originalLikeCount);
+      
+      // Optional: show user-friendly error message
+      // You could add a toast notification here
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -54,6 +96,13 @@ const PostCard = ({ post, onLike, onComment, onShare, onEdit, onDelete, currentU
       }
     } catch (e) {
       alert('Failed to add comment');
+    }
+  };
+
+  const handleAuthorClick = () => {
+    const authorId = post?.authorId || post?.authorUid || post?.author?.id || post?.author?.uid;
+    if (authorId) {
+      navigate(`/profile/${authorId}`);
     }
   };
 
@@ -74,12 +123,26 @@ const PostCard = ({ post, onLike, onComment, onShare, onEdit, onDelete, currentU
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+    const confirmMessage = 'Are you sure you want to delete this post? This action cannot be undone.';
+    
+    if (window.confirm(confirmMessage)) {
       try {
+        console.log('🗑️ PostCard: Initiating delete for post:', post?.id);
+        setShowDropdown(false); // Close dropdown immediately
+        
+        // Show loading state (optional: you could add a loading state)
+        // setIsDeleting(true);
+        
         await onDelete?.(post?.id);
-        setShowDropdown(false);
+        console.log('✅ PostCard: Delete completed successfully');
+        
       } catch (e) {
-        alert('Failed to delete post');
+        console.error('❌ PostCard: Delete failed:', e);
+        const errorMessage = e?.message || 'Failed to delete post';
+        alert(`Delete failed: ${errorMessage}`);
+        
+        // Re-open dropdown on error so user can try again
+        setShowDropdown(true);
       }
     }
   };
@@ -121,7 +184,7 @@ const PostCard = ({ post, onLike, onComment, onShare, onEdit, onDelete, currentU
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-foreground hover:underline cursor-pointer">
+                <h3 className="font-semibold text-foreground hover:underline cursor-pointer" onClick={handleAuthorClick}>
                   {post?.author?.name || 'Unknown User'}
                 </h3>
                 {post?.author?.verified && (
@@ -323,13 +386,22 @@ const PostCard = ({ post, onLike, onComment, onShare, onEdit, onDelete, currentU
         <div className="flex items-center justify-between">
           <button
             onClick={handleLike}
+            disabled={isLiking}
             className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
               isLiked 
-                ? 'text-error bg-error/10 hover:bg-error/20' :'text-muted-foreground hover:text-foreground hover:bg-muted'
-            }`}
+                ? 'text-error bg-error/10 hover:bg-error/20' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <Icon name={isLiked ? "Heart" : "Heart"} size={18} fill={isLiked ? "currentColor" : "none"} />
-            <span className="text-sm font-medium">Like</span>
+            <Icon 
+              name={isLiked ? "Heart" : "Heart"} 
+              size={18} 
+              fill={isLiked ? "currentColor" : "none"}
+              className={isLiking ? 'animate-pulse' : ''}
+            />
+            <span className="text-sm font-medium">
+              {isLiking ? 'Liking...' : 'Like'}
+            </span>
           </button>
           
           <button

@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
-import { getUserPosts } from '../../../utils/firestoreSocialApi';
+import { getUserPosts, getUserConnections } from '../../../utils/firestoreSocialApi';
 import { safeLog } from '../../../utils/safeLogging';
+import CoachDashboard from './CoachDashboard';
+import CoachInfo from '../../../components/CoachInfo';
 
 const ProfileTabs = ({ userProfile, activeTab, onTabChange }) => {
   const [userPosts, setUserPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [userConnections, setUserConnections] = useState([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
+  
+  const navigate = useNavigate();
 
   // Load user posts when posts tab is active
   useEffect(() => {
     if (activeTab === 'posts' && userProfile?.uid) {
       loadUserPosts();
+    }
+  }, [activeTab, userProfile?.uid]);
+
+  // Load user connections when connections tab is active
+  useEffect(() => {
+    if (activeTab === 'connections' && userProfile?.uid) {
+      loadUserConnections();
     }
   }, [activeTab, userProfile?.uid]);
 
@@ -28,12 +42,55 @@ const ProfileTabs = ({ userProfile, activeTab, onTabChange }) => {
       setPostsLoading(false);
     }
   };
+
+  const loadUserConnections = async () => {
+    try {
+      setConnectionsLoading(true);
+      safeLog.log('Loading connections for user:', userProfile.uid);
+      const connections = await getUserConnections(userProfile.uid);
+      safeLog.log('Successfully loaded connections:', connections.length);
+      setUserConnections(connections);
+    } catch (error) {
+      safeLog.error('Failed to load user connections:', error);
+      setUserConnections([]);
+    } finally {
+      setConnectionsLoading(false);
+    }
+  };
+
+  const handleViewProfile = (connectionId) => {
+    navigate(`/profile/${connectionId}`);
+  };
+
+  const handleMessage = (connectionId) => {
+    navigate(`/messaging?user=${connectionId}`);
+  };
+  // Check if user is a coach to show coaching tab
+  const isCoach = userProfile?.role === 'coach' || userProfile?.userType === 'coach' || userProfile?.isCoach;
+  
+  // Debug logging for coach detection
+  React.useEffect(() => {
+    if (userProfile) {
+      console.log('🏆 Coach Detection Debug:', {
+        userId: userProfile.uid || userProfile.id,
+        role: userProfile.role,
+        userType: userProfile.userType,
+        isCoach: userProfile.isCoach,
+        isCoachDetected: isCoach,
+        isOwnProfile: userProfile.isOwnProfile,
+        personalInfoRole: userProfile.personalInfo?.role,
+        personalInfoUserType: userProfile.personalInfo?.userType
+      });
+    }
+  }, [userProfile, isCoach]);
+  
   const tabs = [
     { id: 'about', label: 'About', icon: 'User' },
     { id: 'posts', label: 'Posts', icon: 'FileText' },
     { id: 'media', label: 'Media', icon: 'Image' },
     { id: 'achievements', label: 'Achievements', icon: 'Trophy' },
-    { id: 'connections', label: 'Connections', icon: 'Users' }
+    { id: 'connections', label: 'Connections', icon: 'Users' },
+    ...(isCoach && userProfile?.isOwnProfile ? [{ id: 'coaching', label: 'Coaching', icon: 'BookOpen' }] : [])
   ];
 
   return (
@@ -60,6 +117,9 @@ const ProfileTabs = ({ userProfile, activeTab, onTabChange }) => {
       <div className="p-6">
         {activeTab === 'about' && (
           <div className="space-y-6">
+            {/* Coach Information (for athletes) */}
+            <CoachInfo athleteProfile={userProfile} />
+
             {/* Bio */}
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-3">Biography</h3>
@@ -295,29 +355,137 @@ const ProfileTabs = ({ userProfile, activeTab, onTabChange }) => {
         )}
 
         {activeTab === 'connections' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userProfile?.connections?.map((connection) => (
-              <div key={connection?.id} className="p-4 bg-muted rounded-lg">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden">
-                    <img src={connection?.profileImage} alt={connection?.name} className="w-full h-full object-cover" />
+          <div className="space-y-4">
+            {connectionsLoading ? (
+              <div className="text-center py-12">
+                <Icon name="Loader2" size={32} className="text-muted-foreground mx-auto mb-4 animate-spin" />
+                <p className="text-muted-foreground">Loading connections...</p>
+              </div>
+            ) : userConnections && userConnections.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {userConnections.map((connection) => (
+                  <div key={connection?.id} className="p-4 bg-muted rounded-lg border border-border hover:shadow-md transition-shadow">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-secondary flex items-center justify-center flex-shrink-0">
+                        {connection?.profileImage ? (
+                          <img 
+                            src={connection.profileImage} 
+                            alt={connection?.name || 'User'} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <Icon name="User" size={16} className="text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">
+                          {connection?.name || connection?.displayName || 'Unknown User'}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {connection?.title || connection?.sport || 'Athlete'}
+                        </p>
+                        {connection?.location && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {connection.location}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {connection?.bio && (
+                      <p className="text-sm text-muted-foreground mb-3 overflow-hidden" style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}>
+                        {connection.bio}
+                      </p>
+                    )}
+                    
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleViewProfile(connection.id || connection.uid)}
+                        className="flex-1 px-3 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                      >
+                        View Profile
+                      </button>
+                      <button 
+                        onClick={() => handleMessage(connection.id || connection.uid)}
+                        className="px-3 py-2 bg-background border border-border text-sm rounded-lg hover:bg-muted transition-colors"
+                        title="Send Message"
+                      >
+                        <Icon name="MessageCircle" size={16} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{connection?.name}</p>
-                    <p className="text-sm text-muted-foreground">{connection?.title}</p>
-                  </div>
+                ))}
+              </div>
+            ) : userProfile?.connections && userProfile.connections.length > 0 ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-blue-800 text-sm">
+                    Found {userProfile.connections.length} connections, but couldn't load their profile details. 
+                    This might be a temporary issue.
+                  </p>
                 </div>
-                <div className="flex space-x-2">
-                  <button className="flex-1 px-3 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90 transition-colors">
-                    View Profile
-                  </button>
-                  <button className="px-3 py-2 bg-background border border-border text-sm rounded-lg hover:bg-muted transition-colors">
-                    <Icon name="MessageCircle" size={16} />
-                  </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {userProfile.connections.map((connectionId, index) => (
+                    <div key={connectionId} className="p-4 bg-muted rounded-lg border border-border">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-secondary flex items-center justify-center flex-shrink-0">
+                          <Icon name="User" size={16} className="text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">
+                            Connection {index + 1}
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            Athlete
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handleViewProfile(connectionId)}
+                          className="flex-1 px-3 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                        >
+                          View Profile
+                        </button>
+                        <button 
+                          onClick={() => handleMessage(connectionId)}
+                          className="px-3 py-2 bg-background border border-border text-sm rounded-lg hover:bg-muted transition-colors"
+                          title="Send Message"
+                        >
+                          <Icon name="MessageCircle" size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-12">
+                <Icon name="Users" size={48} className="text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  {userProfile?.isOwnProfile ? 'No connections yet' : 'No connections to show'}
+                </h3>
+                <p className="text-muted-foreground">
+                  {userProfile?.isOwnProfile ? 
+                    "Connect with other athletes to see them here!" : 
+                    "This user hasn't connected with anyone yet."
+                  }
+                </p>
+              </div>
+            )}
           </div>
+        )}
+
+        {activeTab === 'coaching' && isCoach && (
+          <CoachDashboard userProfile={userProfile} />
         )}
       </div>
     </div>

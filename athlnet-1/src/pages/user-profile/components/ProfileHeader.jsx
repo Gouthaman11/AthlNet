@@ -1,8 +1,11 @@
 import React from 'react';
 import { safeLog } from '../../../utils/safeLogging';
+import { isCoach } from '../../../utils/coachUtils';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
+import CoachBadge from '../../../components/CoachBadge';
+import AddToCoachingButton from '../../../components/AddToCoachingButton';
 
 const ProfileHeader = ({ 
   userProfile, 
@@ -13,6 +16,14 @@ const ProfileHeader = ({
   followLoading = false,
   connectLoading = false
 }) => {
+  const [coachingMessage, setCoachingMessage] = React.useState(null);
+
+  const handleCoachingResult = (result) => {
+    setCoachingMessage(result);
+    // Auto-clear message after 5 seconds
+    setTimeout(() => setCoachingMessage(null), 5000);
+  };
+
   // Use props directly instead of local state to prevent race conditions
   const isFollowing = userProfile?.isFollowing || false;
   const isConnected = userProfile?.isConnected || false;
@@ -43,9 +54,9 @@ const ProfileHeader = ({
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Cover Image */}
-      <div className="relative h-48 lg:h-64 bg-gradient-to-r from-primary to-secondary">
+      <div className="relative h-48 lg:h-64 bg-gradient-to-r from-blue-500 to-purple-600">
         {userProfile?.coverImage ? (
           <Image
             src={userProfile.coverImage}
@@ -59,21 +70,21 @@ const ProfileHeader = ({
       </div>
       
       {/* Profile Content */}
-      <div className="relative px-6 pb-6">
+      <div className="relative px-6 pb-6 bg-white dark:bg-gray-800">
         {/* Profile Picture */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between -mt-16 lg:-mt-20">
           <div className="flex flex-col lg:flex-row lg:items-end lg:space-x-6">
             <div className="relative">
-              <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full border-4 border-card bg-card overflow-hidden">
+              <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full border-4 border-white shadow-xl bg-white overflow-hidden">
                 <Image
-                  src={userProfile?.profileImage || userProfile?.photoURL}
-                  alt={userProfile?.name || userProfile?.displayName}
+                  src={userProfile?.profileImage || userProfile?.photoURL || userProfile?.personalInfo?.profileImage}
+                  alt={userProfile?.name || userProfile?.displayName || 'Profile'}
                   className="w-full h-full object-cover"
                 />
               </div>
               {userProfile?.isVerified && (
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-card">
-                  <Icon name="Check" size={16} color="white" />
+                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                  <Icon name="Check" size={20} color="white" />
                 </div>
               )}
             </div>
@@ -81,34 +92,41 @@ const ProfileHeader = ({
             {/* Basic Info */}
             <div className="mt-4 lg:mt-0 lg:mb-4">
               <div className="flex items-center space-x-2 mb-2">
-                <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                  {userProfile?.name || userProfile?.displayName || 'Anonymous User'}
+                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
+                  {userProfile?.name || userProfile?.displayName || 
+                   (userProfile?.personalInfo?.firstName && userProfile?.personalInfo?.lastName ? 
+                    `${userProfile?.personalInfo?.firstName} ${userProfile?.personalInfo?.lastName}` :
+                    userProfile?.personalInfo?.firstName || userProfile?.email?.split('@')[0] || 'Anonymous User')}
                 </h1>
                 {userProfile?.isVerified && (
-                  <Icon name="BadgeCheck" size={24} className="text-primary" />
+                  <Icon name="BadgeCheck" size={28} className="text-blue-500 flex-shrink-0" />
                 )}
+                <CoachBadge userProfile={userProfile} />
               </div>
-              <p className="text-lg text-muted-foreground mb-2">
-                {userProfile?.title || userProfile?.sport || 'Athlete'}
+              <p className="text-lg lg:text-xl text-gray-600 dark:text-gray-300 mb-3 font-medium">
+                {isCoach(userProfile) ? 
+                  `${userProfile?.title || userProfile?.personalInfo?.title || userProfile?.sport || 'Coach'}` :
+                  userProfile?.title || userProfile?.personalInfo?.title || userProfile?.sport || 
+                  userProfile?.personalInfo?.sport || 'Athlete'}
               </p>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {userProfile?.sports?.map((sport, index) => (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {(userProfile?.sports || userProfile?.personalInfo?.sports || []).slice(0, 3).map((sport, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full"
+                    className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-semibold rounded-full"
                   >
                     {sport}
                   </span>
                 ))}
               </div>
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+              <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                 <div className="flex items-center space-x-1">
                   <Icon name="MapPin" size={16} />
-                  <span>{userProfile?.location || 'Unknown Location'}</span>
+                  <span>{userProfile?.location || userProfile?.personalInfo?.location || 'Location not specified'}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Icon name="Calendar" size={16} />
-                  <span>Joined {formatJoinDate(userProfile?.joinedDate)}</span>
+                  <span>Joined {formatJoinDate(userProfile?.joinedDate || userProfile?.createdAt)}</span>
                 </div>
               </div>
             </div>
@@ -157,6 +175,13 @@ const ProfileHeader = ({
                     </>
                   ) : isFollowing ? "Unfollow" : "Follow"}
                 </Button>
+                
+                {/* Add to Coaching Button (only visible to coaches) */}
+                <AddToCoachingButton 
+                  athleteProfile={userProfile}
+                  onSuccess={handleCoachingResult}
+                  className="flex-1 sm:flex-none"
+                />
               </>
             )}
             {userProfile?.isOwnProfile && (
@@ -174,33 +199,54 @@ const ProfileHeader = ({
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6 pt-6 border-t border-border">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
               {formatNumber(userProfile?.stats?.followers || 0)}
             </div>
-            <div className="text-sm text-muted-foreground">Followers</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Followers</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
               {formatNumber(userProfile?.stats?.following || 0)}
             </div>
-            <div className="text-sm text-muted-foreground">Following</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Following</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
               {formatNumber(userProfile?.stats?.connections || 0)}
             </div>
-            <div className="text-sm text-muted-foreground">Connections</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Connections</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
-              {formatNumber(userProfile?.stats?.posts || 0)}
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              {formatNumber(userProfile?.stats?.posts || userProfile?.posts?.length || 0)}
             </div>
-            <div className="text-sm text-muted-foreground">Posts</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Posts</div>
           </div>
         </div>
       </div>
+
+      {/* Coaching Message Display */}
+      {coachingMessage && (
+        <div className={`mt-4 p-4 rounded-lg border ${
+          coachingMessage.type === 'success' 
+            ? 'bg-green-50 border-green-200 text-green-800' 
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center">
+            <Icon 
+              name={coachingMessage.type === 'success' ? 'CheckCircle' : 'AlertCircle'} 
+              size={16} 
+              className="mr-2" 
+            />
+            <div>
+              <p className="font-medium">{coachingMessage.title}</p>
+              <p className="text-sm">{coachingMessage.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

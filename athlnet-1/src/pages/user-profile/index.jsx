@@ -6,7 +6,8 @@ import Header from '../../components/ui/Header';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileTabs from './components/ProfileTabs';
 import EditProfileModal from './components/EditProfileModal';
-import { getFullUserProfile, updateUserProfile, toggleFollowUser, followUserSimple, connectWithUser, subscribeToProfileStats, subscribeToFollowState } from '../../utils/firestoreSocialApi';
+import { getFullUserProfile, updateUserProfile, toggleFollowUser, followUserSimple, connectWithUser, subscribeToProfileStats, subscribeToFollowState, subscribeToConnectionState } from '../../utils/firestoreSocialApi';
+import { cleanUserProfile } from '../../utils/profileUtils';
 import { safeLog } from '../../utils/safeLogging';
 import '../../utils/debugFollow';
 import '../../utils/testFollowFixed';
@@ -61,18 +62,51 @@ const UserProfile = () => {
         profile.isOwnProfile = isOwnProfile;
         profile.isFollowing = currentUserData ? 
           currentUserData.following?.includes(profileUserId) || false : false;
-        profile.isConnected = currentUser ? 
-          profile.connections?.some(conn => conn.id === currentUser.uid || conn === currentUser.uid) || false : false;
         
-        setUserProfile(profile);
-        safeLog.log('✅ Profile loaded and set successfully');
-        safeLog.log('📊 Final profile summary:', {
-          name: profile?.name,
-          displayName: profile?.displayName,
-          isFollowing: profile?.isFollowing,
-          statsPostsCount: profile?.stats?.posts,
-          statsFollowersCount: profile?.stats?.followers
+        // Fix connection status check - check if target user is in current user's connections
+        profile.isConnected = currentUser && currentUserData ? 
+          currentUserData.connections?.includes(profileUserId) || false : false;
+        
+        safeLog.log('Connection status calculation:', {
+          currentUserId: currentUser?.uid,
+          targetUserId: profileUserId,
+          currentUserConnections: currentUserData?.connections,
+          isConnected: profile.isConnected
         });
+        
+        // Apply data cleaning to ensure consistent display
+        const cleanedProfile = cleanUserProfile(profile);
+        if (cleanedProfile) {
+          // Preserve original profile fields that cleaning might remove
+          cleanedProfile.isOwnProfile = profile.isOwnProfile;
+          cleanedProfile.isFollowing = profile.isFollowing;
+          cleanedProfile.isConnected = profile.isConnected;
+          cleanedProfile.stats = profile.stats;
+          cleanedProfile.posts = profile.posts;
+          cleanedProfile.media = profile.media;
+          cleanedProfile.joinedDate = profile.joinedDate;
+          cleanedProfile.personalInfo = profile.personalInfo;
+          
+          // Preserve coach-specific data that might be lost in cleaning
+          cleanedProfile.role = profile.role || cleanedProfile.role;
+          cleanedProfile.userType = profile.userType || cleanedProfile.userType;
+          cleanedProfile.isCoach = profile.isCoach || cleanedProfile.isCoach || profile.role === 'coach';
+          cleanedProfile.coachInfo = profile.coachInfo;
+          
+          setUserProfile(cleanedProfile);
+          safeLog.log('✅ Profile cleaned and set successfully');
+          safeLog.log('📊 Final cleaned profile summary:', {
+            name: cleanedProfile?.name,
+            displayName: cleanedProfile?.displayName,
+            originalName: profile?.name,
+            originalDisplayName: profile?.displayName,
+            isFollowing: cleanedProfile?.isFollowing,
+            statsPostsCount: cleanedProfile?.stats?.posts
+          });
+        } else {
+          setUserProfile(profile);
+          safeLog.warn('⚠️ Profile cleaning failed, using original profile');
+        }
       } catch (error) {
         safeLog.error('Failed to load profile:', error);
         setUserProfile(null);
@@ -113,6 +147,23 @@ const UserProfile = () => {
     if (currentUser && profileUserId && !isOwnProfile && !authLoading) {
       unsubscribe = subscribeToFollowState(currentUser.uid, profileUserId, (isFollowing) => {
         setUserProfile(prev => prev ? { ...prev, isFollowing } : prev);
+      });
+    }
+    
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [currentUser, profileUserId, isOwnProfile, authLoading]);
+
+  // Real-time connection state subscription
+  useEffect(() => {
+    let unsubscribe = null;
+    
+    if (currentUser && profileUserId && !isOwnProfile && !authLoading) {
+      unsubscribe = subscribeToConnectionState(currentUser.uid, profileUserId, (isConnected) => {
+        setUserProfile(prev => prev ? { ...prev, isConnected } : prev);
       });
     }
     
@@ -214,17 +265,52 @@ const UserProfile = () => {
   const handleConnect = async () => {
     if (!currentUser || !userProfile || userProfile.isConnected) return;
     
+    console.log('=== handleConnect called ===');
+    console.log('Current user:', currentUser.uid);
+    console.log('Target user:', userProfile.uid || profileUserId);
+    console.log('Is connected:', userProfile.isConnected);
+    
     setConnectLoading(true);
+    setSaveError(null);
+    
     try {
-      await connectWithUser(currentUser.uid, userProfile.uid || profileUserId);
+      const targetUserId = userProfile.uid || profileUserId;
+      if (!targetUserId) {
+        throw new Error('Target user ID not found');
+      }
+      
+      const result = await connectWithUser(currentUser.uid, targetUserId);
+      console.log('Connection result:', result);
+      
+      // Update local state immediately
       setUserProfile(prev => ({
         ...prev,
         isConnected: true
       }));
+      
+      // Force refresh of current user data to update connection counts
+      try {
+        const updatedCurrentUser = await getFullUserProfile(currentUser.uid);
+        console.log('Updated current user connections count:', updatedCurrentUser?.connections?.length || 0);
+      } catch (refreshError) {
+        console.warn('Could not refresh user data:', refreshError);
+      }
+      
       safeLog.log('Connected with user successfully');
+      
+      // Show success message briefly
+      if (result?.message) {
+        setSaveError(`Success: ${result.message}`);
+        setTimeout(() => setSaveError(null), 3000);
+      }
+      
     } catch (error) {
+      console.error('Connection error details:', error);
       safeLog.error('Failed to connect with user:', error);
-      setSaveError('Failed to connect with user.');
+      
+      // Show more specific error message
+      const errorMessage = error.message || 'Failed to connect with user';
+      setSaveError(`Connection failed: ${errorMessage}`);
     } finally {
       setConnectLoading(false);
     }

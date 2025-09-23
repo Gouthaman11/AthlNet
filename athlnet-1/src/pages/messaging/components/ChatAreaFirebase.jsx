@@ -3,6 +3,7 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Icon from '../../../components/AppIcon';
 import { uploadMessageFile } from '../../../utils/firestoreSocialApi';
+import { db, auth, isConfigured, initError } from '../../../firebaseClient';
 
 const ChatAreaFirebase = ({ 
   conversation, 
@@ -16,8 +17,20 @@ const ChatAreaFirebase = ({
   const [messageInput, setMessageInput] = useState('');
   const [attachmentPreview, setAttachmentPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [connectionError, setConnectionError] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Check Firebase connection on mount
+  useEffect(() => {
+    if (!isConfigured) {
+      setConnectionError(initError || 'Firebase not configured properly');
+    } else if (!auth || !db) {
+      setConnectionError('Firebase services not available');
+    } else {
+      setConnectionError(null);
+    }
+  }, []);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -28,6 +41,17 @@ const ChatAreaFirebase = ({
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    
+    // Check for connection errors first
+    if (connectionError) {
+      alert(`Connection Error: ${connectionError}\n\nPlease check your internet connection and refresh the page.`);
+      return;
+    }
+    
+    if (!auth?.currentUser) {
+      alert('Authentication Error: Please log in to send messages.');
+      return;
+    }
     
     console.log('ChatArea: Sending message...', messageInput.trim());
     
@@ -46,7 +70,17 @@ const ChatAreaFirebase = ({
         console.log('ChatArea: File uploaded successfully');
       } catch (error) {
         console.error('ChatArea: Error uploading file:', error);
-        alert('Failed to upload file. Please try again.');
+        let errorMessage = 'Failed to upload file. Please try again.';
+        
+        if (error.code === 'permission-denied') {
+          errorMessage = 'Permission denied. Please check your account permissions.';
+        } else if (error.code === 'storage/quota-exceeded') {
+          errorMessage = 'Storage quota exceeded. Please contact support.';
+        } else if (error.code === 'storage/retry-limit-exceeded') {
+          errorMessage = 'Upload failed due to network issues. Please check your connection and try again.';
+        }
+        
+        alert(errorMessage);
         setUploading(false);
         return;
       }
@@ -65,13 +99,29 @@ const ChatAreaFirebase = ({
       
     } catch (error) {
       console.error('ChatArea: Error sending message:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to send message. Please try again.';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'Permission denied. You may need to log out and log back in.';
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Service temporarily unavailable. Please check your internet connection.';
+      } else if (error.code === 'failed-precondition') {
+        errorMessage = 'Connection error. Please refresh the page and try again.';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+      
+      alert(errorMessage);
+      
       // Restore message content on error
       setMessageInput(messageContent);
       setUploading(false);
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey && !uploading) {
       e.preventDefault();
       handleSendMessage(e);
@@ -149,6 +199,13 @@ const ChatAreaFirebase = ({
           </Button>
         )}
         
+        {connectionError && (
+          <div className="flex items-center space-x-2 px-3 py-1 bg-red-50 border border-red-200 rounded-md">
+            <Icon name="AlertCircle" size={16} className="text-red-500" />
+            <span className="text-sm text-red-700">Connection Error</span>
+          </div>
+        )}
+        
         <div className="relative flex-shrink-0">
           <img
             src={
@@ -170,7 +227,10 @@ const ChatAreaFirebase = ({
             {conversation.otherUser?.name || 'Unknown User'}
           </h2>
           <p className="text-sm text-gray-500">
-            {conversation.otherUser?.isOnline ? 'Online' : 'Offline'}
+            {connectionError ? 
+              'Connection issues' : 
+              (conversation.otherUser?.isOnline ? 'Online' : 'Offline')
+            }
           </p>
         </div>
 
@@ -377,7 +437,7 @@ const ChatAreaFirebase = ({
             <Input
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Type a message..."
               disabled={sending || uploading}
               className="resize-none border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"

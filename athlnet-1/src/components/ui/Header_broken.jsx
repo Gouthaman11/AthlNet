@@ -38,7 +38,6 @@ const Header = () => {
 
     fetchProfile();
   }, [user]);
-
   const userMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -163,7 +162,6 @@ const Header = () => {
                 <div className="text-xs text-muted-foreground">{profileTitle}</div>
               </div>
             </button>
-
             {/* User Dropdown */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 max-w-[90vw] bg-popover border border-border rounded-lg shadow-modal z-dropdown">
@@ -220,7 +218,21 @@ const Header = () => {
           </button>
         </div>
       </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+          >
+            <Icon name={isMobileMenuOpen ? "X" : "Menu"} size={20} />
+          </button>
+        </div>
+      </div>
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-card border-t border-border shadow-lg">

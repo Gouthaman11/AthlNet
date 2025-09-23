@@ -7,12 +7,14 @@ import {
   getDoc, 
   getDocs, 
   updateDoc, 
+  deleteDoc,
   query, 
   where, 
   orderBy, 
   limit,
   setDoc,
-  onSnapshot
+  onSnapshot,
+  runTransaction
 } from 'firebase/firestore';
 import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { safeLog } from './safeLogging';
@@ -554,22 +556,73 @@ export async function updatePost(postId, updates) {
 }
 
 // Delete a post
-// Usage: await deletePost(postId);
-export async function deletePost(postId) {
-  const postRef = doc(db, 'posts', postId);
-  await deleteDoc(postRef);
+// Usage: await deletePost(postId, userId);
+export async function deletePost(postId, userId = null) {
+  try {
+    console.log('🗑️ Attempting to delete post:', postId, 'by user:', userId);
+    
+    if (!postId) {
+      throw new Error('Post ID is required');
+    }
+
+    const postRef = doc(db, 'posts', postId);
+    const postSnap = await getDoc(postRef);
+    
+    if (!postSnap.exists()) {
+      throw new Error('Post not found');
+    }
+
+    const postData = postSnap.data();
+    
+    // Optional: Check if user is authorized to delete (if userId provided)
+    if (userId && postData.authorId && postData.authorId !== userId && postData.authorUid !== userId) {
+      throw new Error('You can only delete your own posts');
+    }
+
+    await deleteDoc(postRef);
+    console.log('✅ Post deleted successfully:', postId);
+    
+    return { success: true, message: 'Post deleted successfully' };
+  } catch (error) {
+    console.error('❌ Error deleting post:', error);
+    throw error;
+  }
 }
 
 // Like a post
 // Usage: await likePost(postId, uid);
 export async function likePost(postId, userId) {
-  const postRef = doc(db, 'posts', postId);
-  const postSnap = await getDoc(postRef);
-  if (postSnap.exists()) {
-    const likes = postSnap.data().likes || [];
-    if (!likes.includes(userId)) {
-      await updateDoc(postRef, { likes: [...likes, userId] });
+  try {
+    const postRef = doc(db, 'posts', postId);
+    const postSnap = await getDoc(postRef);
+    
+    if (!postSnap.exists()) {
+      throw new Error('Post not found');
     }
+    
+    const postData = postSnap.data();
+    const likes = postData.likes || [];
+    const isCurrentlyLiked = likes.includes(userId);
+    
+    let updatedLikes;
+    if (isCurrentlyLiked) {
+      // Unlike: remove user from likes array
+      updatedLikes = likes.filter(id => id !== userId);
+    } else {
+      // Like: add user to likes array
+      updatedLikes = [...likes, userId];
+    }
+    
+    await updateDoc(postRef, { likes: updatedLikes });
+    
+    return {
+      success: true,
+      isLiked: !isCurrentlyLiked,
+      likeCount: updatedLikes.length
+    };
+  } catch (error) {
+    console.error('Error toggling like:', error);
+    throw error;
   }
 }
 
@@ -1116,6 +1169,28 @@ export async function followUserSimple(currentUid, targetUid, shouldFollow) {
     }
     
     console.log('✅ followUserSimple completed (verification skipped)');
+    
+    // Send notification for new follow (only when following, not unfollowing)
+    if (shouldFollow) {
+      try {
+        const { sendNewFollowNotification } = await import('./notificationUtils');
+        const currentUserDoc = await getDoc(doc(db, 'users', currentUid));
+        
+        if (currentUserDoc.exists()) {
+          const currentUserData = currentUserDoc.data();
+          const followerInfo = {
+            name: currentUserData.displayName || currentUserData.name || 'Someone',
+            profileImage: currentUserData.profileImage || currentUserData.avatarUrl
+          };
+          
+          await sendNewFollowNotification(targetUid, currentUid, followerInfo);
+          console.log('✅ Follow notification sent');
+        }
+      } catch (notificationError) {
+        console.warn('⚠️ Could not send follow notification:', notificationError);
+      }
+    }
+    
     return { success: true, message: shouldFollow ? 'Followed user' : 'Unfollowed user' };
     
   } catch (error) {
@@ -1144,37 +1219,208 @@ export async function followUserSimple(currentUid, targetUid, shouldFollow) {
 // Usage: await connectWithUser(currentUid, targetUid);
 export async function connectWithUser(currentUid, targetUid) {
   try {
-    const currentUserRef = doc(db, 'users', currentUid);
-    const targetUserRef = doc(db, 'users', targetUid);
+    console.log('=== connectWithUser called ===');
+    console.log('Current User ID:', currentUid);
+    console.log('Target User ID:', targetUid);
+
+    if (!currentUid || !targetUid) {
+      throw new Error('Both user IDs are required for connection');
+    }
+
+    if (currentUid === targetUid) {
+      throw new Error('Cannot connect with yourself');
+    }
+
+    if (!db) {
+      throw new Error('Firestore database not initialized');
+    }
+
+    // Use transaction to ensure atomic updates
+    const result = await runTransaction(db, async (transaction) => {
+      const currentUserRef = doc(db, 'users', currentUid);
+      const targetUserRef = doc(db, 'users', targetUid);
+      
+      console.log('Fetching user documents in transaction...');
+      const currentUserDoc = await transaction.get(currentUserRef);
+      const targetUserDoc = await transaction.get(targetUserRef);
+      
+      if (!currentUserDoc.exists()) {
+        throw new Error('Current user not found');
+      }
+      
+      if (!targetUserDoc.exists()) {
+        throw new Error('Target user not found');
+      }
+      
+      const currentUserData = currentUserDoc.data();
+      const targetUserData = targetUserDoc.data();
+      
+      const currentConnections = currentUserData.connections || [];
+      const targetConnections = targetUserData.connections || [];
+      
+      console.log('Current user connections before:', currentConnections.length);
+      console.log('Target user connections before:', targetConnections.length);
+      
+      // Check if already connected
+      if (currentConnections.includes(targetUid)) {
+        console.log('Users are already connected');
+        return { success: true, message: 'Users are already connected', alreadyConnected: true };
+      }
+      
+      console.log('Adding mutual connections in transaction...');
+      
+      // Update both users' connections in the transaction
+      const newCurrentConnections = [...currentConnections, targetUid];
+      const newTargetConnections = [...targetConnections, currentUid];
+      
+      transaction.update(currentUserRef, {
+        connections: newCurrentConnections
+      });
+      
+      transaction.update(targetUserRef, {
+        connections: newTargetConnections
+      });
+      
+      console.log('Current user connections after:', newCurrentConnections.length);
+      console.log('Target user connections after:', newTargetConnections.length);
+      
+      return { 
+        success: true, 
+        message: 'Successfully connected with user',
+        currentConnections: newCurrentConnections.length,
+        targetConnections: newTargetConnections.length
+      };
+    });
     
-    const currentUserDoc = await getDoc(currentUserRef);
-    const targetUserDoc = await getDoc(targetUserRef);
+    console.log('✅ Transaction completed successfully');
+    console.log('Transaction result:', result);
     
-    if (!currentUserDoc.exists() || !targetUserDoc.exists()) {
+    // Send notification to the target user about the new connection
+    try {
+      const { sendNewConnectionNotification } = await import('./notificationUtils');
+      const currentUserDoc = await getDoc(doc(db, 'users', currentUid));
+      
+      if (currentUserDoc.exists()) {
+        const currentUserData = currentUserDoc.data();
+        const currentUserInfo = {
+          name: currentUserData.displayName || currentUserData.name || 'Someone',
+          profileImage: currentUserData.profileImage || currentUserData.avatarUrl
+        };
+        
+        await sendNewConnectionNotification(targetUid, currentUid, currentUserInfo);
+        console.log('✅ Connection notification sent');
+      }
+    } catch (notificationError) {
+      console.warn('⚠️ Could not send connection notification:', notificationError);
+    }
+    
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Error connecting with user:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    
+    // Provide more specific error messages based on error type
+    if (error.code === 'permission-denied') {
+      throw new Error('Permission denied. Please make sure you are logged in and have the necessary permissions to connect with users.');
+    } else if (error.code === 'not-found') {
+      throw new Error('User not found. The user you are trying to connect with may not exist.');
+    } else if (error.code === 'unauthenticated') {
+      throw new Error('Authentication required. Please log in and try again.');
+    } else {
+      throw error;
+    }
+  }
+}
+
+// Get user connections with full profile data
+// Usage: const connections = await getUserConnections(userId);
+export async function getUserConnections(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    if (!db) {
+      throw new Error('Firestore database not initialized');
+    }
+
+    // First get the user's connections array
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      console.error('User document not found for ID:', userId);
       throw new Error('User not found');
     }
     
-    const currentUserData = currentUserDoc.data();
-    const targetUserData = targetUserDoc.data();
+    const userData = userDoc.data();
+    const connectionIds = userData.connections || [];
     
-    const currentConnections = currentUserData.connections || [];
-    const targetConnections = targetUserData.connections || [];
+    console.log(`Loading ${connectionIds.length} connections for user ${userId}`);
     
-    // Add mutual connection
-    if (!currentConnections.includes(targetUid)) {
-      await updateDoc(currentUserRef, {
-        connections: [...currentConnections, targetUid]
-      });
+    if (connectionIds.length === 0) {
+      return [];
     }
-    if (!targetConnections.includes(currentUid)) {
-      await updateDoc(targetUserRef, {
-        connections: [...targetConnections, currentUid]
-      });
-    }
+
+    // Get full profile data for each connection using Promise.all for better performance
+    const connectionPromises = connectionIds.map(async (connectionId) => {
+      try {
+        const connectionRef = doc(db, 'users', connectionId);
+        const connectionDoc = await getDoc(connectionRef);
+        
+        if (!connectionDoc.exists()) {
+          console.warn(`Connection document not found for ID: ${connectionId}`);
+          return null;
+        }
+
+        const connectionData = connectionDoc.data();
+        
+        // Extract display name using same logic as getFullUserProfile
+        const extractedName = connectionData.displayName || 
+                             connectionData.name ||
+                             (connectionData.personalInfo?.firstName && connectionData.personalInfo?.lastName
+                               ? `${connectionData.personalInfo.firstName} ${connectionData.personalInfo.lastName}`
+                               : connectionData.personalInfo?.firstName ||
+                                 connectionData.personalInfo?.lastName ||
+                                 connectionData.email?.split('@')[0] ||
+                                 'Anonymous User');
+        
+        return {
+          id: connectionId,
+          uid: connectionId,
+          name: extractedName,
+          displayName: extractedName,
+          profileImage: connectionData.profileImage || connectionData.avatarUrl,
+          title: connectionData.sports?.[0] || connectionData.sport || 'Athlete',
+          sport: connectionData.sports?.[0] || connectionData.sport || 'Athlete',
+          role: connectionData.role || connectionData.userType || 'athlete',
+          bio: connectionData.bio,
+          location: connectionData.location
+        };
+        
+      } catch (error) {
+        console.warn(`Failed to load connection profile for ${connectionId}:`, error);
+        return null;
+      }
+    });
+
+    // Wait for all connection profiles to be fetched
+    const connectionResults = await Promise.all(connectionPromises);
     
-    return true;
+    // Filter out null results (failed fetches)
+    const connectionProfiles = connectionResults.filter(profile => profile !== null);
+    
+    console.log(`Successfully loaded ${connectionProfiles.length} connection profiles`);
+    
+    return connectionProfiles;
   } catch (error) {
-    console.error('Error connecting with user:', error);
+    console.error('Error getting user connections:', error);
     throw error;
   }
 }
@@ -1578,6 +1824,18 @@ export async function getUserConversations(userId) {
     });
     
     console.log('✅ Returning', sortedConversations.length, 'sorted conversations');
+    
+    // Debug: Log each conversation being returned
+    sortedConversations.forEach((conv, index) => {
+      console.log(`📋 Conversation ${index + 1}:`, {
+        id: conv.id,
+        otherUserName: conv.otherUser?.name,
+        lastMessage: conv.lastMessage,
+        lastMessageAt: conv.lastMessageAt,
+        unreadCount: conv.unreadCount
+      });
+    });
+    
     return sortedConversations;
   } catch (error) {
     console.error('❌ Error getting user conversations:', error);
@@ -2156,6 +2414,38 @@ export function subscribeToFollowState(currentUserId, targetUserId, callback) {
     }
   }, (error) => {
     console.error('Error in follow state subscription:', error);
+    callback(false);
+  });
+}
+
+// Subscribe to current user's connections list for real-time connection state updates
+// Usage: const unsubscribe = subscribeToConnectionState(currentUserId, targetUserId, (isConnected) => setIsConnected(isConnected));
+export function subscribeToConnectionState(currentUserId, targetUserId, callback) {
+  if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
+    callback(false);
+    return () => {};
+  }
+  
+  const currentUserRef = doc(db, 'users', currentUserId);
+  
+  return onSnapshot(currentUserRef, (docSnapshot) => {
+    try {
+      if (!docSnapshot.exists()) {
+        callback(false);
+        return;
+      }
+      
+      const userData = docSnapshot.data();
+      const isConnected = userData.connections?.includes(targetUserId) || false;
+      
+      console.log('Real-time connection state updated:', isConnected);
+      callback(isConnected);
+    } catch (error) {
+      console.error('Error in connection state subscription:', error);
+      callback(false);
+    }
+  }, (error) => {
+    console.error('Error in connection state subscription:', error);
     callback(false);
   });
 }

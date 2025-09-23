@@ -31,7 +31,7 @@ const ChatArea = ({ conversation, messages, onSendMessage, onSendCollaborationRe
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e?.key === 'Enter' && !e?.shiftKey) {
       e?.preventDefault();
       handleSendMessage();
@@ -268,7 +268,7 @@ const ChatArea = ({ conversation, messages, onSendMessage, onSendCollaborationRe
               placeholder="Type a message..."
               value={messageText}
               onChange={(e) => setMessageText(e?.target?.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               className="resize-none text-base md:text-sm h-12 md:h-10"
             />
           </div>

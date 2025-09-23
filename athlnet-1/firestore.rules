@@ -30,13 +30,17 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       
       // Allow users to update their own profile, or allow any authenticated user
-      // to update specific fields related to social interactions (e.g., following).
+      // to update specific fields related to social interactions (e.g., following, connections).
       // Also allow any authenticated user to create/update basic user documents for messaging
       allow update: if isAuthenticated() && (
         isOwner(userId) || 
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['following'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['connections'])) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers', 'following'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers', 'connections'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['following', 'connections'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers', 'following', 'connections'])) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['testCounter', 'lastTestTime'])) ||
         // Allow creating basic user documents for messaging (isNewUser, displayName, etc.)
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isNewUser', 'displayName', 'createdAt', 'updatedAt']))

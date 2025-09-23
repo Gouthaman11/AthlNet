@@ -1,7 +1,15 @@
-import React from 'react';
-import Icon from '../../../components/AppIcon';
-import Image from '../../../components/AppImage';
+import React, { useEffect, useState } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../../../firebaseClient';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { cleanUserProfile } from '../../../utils/profileUtils';
+import AppIcon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import CoachBadge from '../../../components/CoachBadge';
+import AddToCoachingButton from '../../../components/AddToCoachingButton';
+
+// Use AppIcon consistently throughout the component
+const Icon = AppIcon;
 
 const DiscoverySection = ({ recommendations, trending, suggestedConnections }) => {
   const handleViewProfile = (userId) => {
@@ -38,11 +46,12 @@ const DiscoverySection = ({ recommendations, trending, suggestedConnections }) =
             {user?.verified && (
               <Icon name="BadgeCheck" size={14} className="text-primary flex-shrink-0" />
             )}
+            <CoachBadge userProfile={user} className="ml-1" />
           </div>
           <p className="text-sm text-muted-foreground mb-2">{user?.title}</p>
           <p className="text-xs text-muted-foreground mb-3">{reason}</p>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               size="xs"
               onClick={() => handleViewProfile(user?.id)}
@@ -57,6 +66,16 @@ const DiscoverySection = ({ recommendations, trending, suggestedConnections }) =
             >
               Connect
             </Button>
+            
+            {/* Add to Coaching Button (only visible to coaches) */}
+            <AddToCoachingButton 
+              athleteProfile={user}
+              onSuccess={(result) => {
+                console.log('Coaching request result:', result);
+                // You could add toast notifications here
+              }}
+              className="xs"
+            />
           </div>
         </div>
       </div>

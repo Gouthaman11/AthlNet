@@ -7,6 +7,9 @@ import "./utils/safeLogging";
 import "./utils/debugNewUserMessaging";
 import "./utils/debugVideoUploads";
 
+// Import coach setup utilities for testing
+import "./utils/coachSetup";
+
 function App() {
   return (
     <AuthProvider>

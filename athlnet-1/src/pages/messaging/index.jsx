@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useSearchParams } from 'react-router-dom';
-import { auth } from '../../firebaseClient';
+import { auth, db, isConfigured } from '../../firebaseClient';
 import { 
   getUserConversations, 
   sendMessageToUser, 
@@ -14,9 +14,13 @@ import {
   testStorageConnection,
   ensureUserDocumentExists
 } from '../../utils/firestoreSocialApi';
+import { 
+  debugUserConversations, 
+  fixUserConversations, 
+  getEnhancedUserConversations 
+} from '../../utils/messagingFixes';
 import { safeLog } from '../../utils/safeLogging';
 import { collection, addDoc, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebaseClient';
 import Header from '../../components/ui/Header';
 import ConversationListFirebase from './components/ConversationListFirebase';
 import ChatAreaFirebase from './components/ChatAreaFirebase';
@@ -30,6 +34,7 @@ import '../../utils/conversationDebug';
 import '../../utils/newUserPermissions';
 import '../../utils/debugPosts';
 import '../../utils/messagingDebugHelper';
+import { getSimpleUserConversations } from '../../utils/simpleConversations';
 
 const MessagingPage = () => {
   const [user] = useAuthState(auth);
@@ -44,15 +49,69 @@ const MessagingPage = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [conversationsUnsubscribe, setConversationsUnsubscribe] = useState(null);
   const [messagesUnsubscribe, setMessagesUnsubscribe] = useState(null);
+  const [connectionRetries, setConnectionRetries] = useState(0);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // Get user ID from search params to start a conversation
   const targetUserId = searchParams.get('user');
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (user?.uid && connectionRetries < 3) {
+        console.log('Back online, retrying connection...');
+        loadConversations();
+      }
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [user, connectionRetries]);
 
   // Manual refresh function for debugging
   window.forceRefreshConversations = () => {
     safeLog.log('🔄 Manual refresh triggered');
     safeLog.log('Current conversations before refresh:', conversations);
     loadConversations();
+  };
+
+  // Test function to check conversations directly
+  window.testConversations = async () => {
+    if (!user?.uid) {
+      console.log('No user logged in');
+      return;
+    }
+    
+    console.log('=== TESTING CONVERSATIONS DIRECTLY ===');
+    const { collection, query, where, getDocs } = await import('firebase/firestore');
+    
+    try {
+      const conversationsRef = collection(db, 'conversations');
+      const testQuery = query(conversationsRef, where('members', 'array-contains', user.uid));
+      const snapshot = await getDocs(testQuery);
+      
+      console.log('Found', snapshot.docs.length, 'conversations');
+      
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        console.log('Conversation:', doc.id, data);
+      });
+      
+      return snapshot.docs.length;
+    } catch (error) {
+      console.error('Error testing conversations:', error);
+      return 0;
+    }
   };
 
   // Add to window for debugging
@@ -65,28 +124,90 @@ const MessagingPage = () => {
     return { conversations, selectedConversation, loading, userId: user?.uid };
   };
 
-  // Test Firebase connectivity
+  // Test Firebase connectivity with better error handling
   const testFirebaseConnection = async () => {
     try {
       safeLog.log('=== TESTING FIREBASE CONNECTION ===');
+      safeLog.log('Firebase config loaded:', isConfigured);
       safeLog.log('Firebase db object available:', !!db);
+      safeLog.log('Firebase auth object available:', !!auth);
       safeLog.log('Current user available:', !!user);
+      safeLog.log('Online status:', isOnline);
+      
+      if (!isOnline) {
+        safeLog.warn('Device is offline');
+        return false;
+      }
+      
+      if (!isConfigured) {
+        const errorMsg = 'Firebase not configured. Please check environment variables.';
+        safeLog.error(errorMsg);
+        if (connectionRetries === 0) {
+          alert('Configuration Error: Firebase is not properly configured. Please contact support.');
+        }
+        return false;
+      }
       
       if (!db) {
-        safeLog.error('Firebase db is null or undefined');
-        return;
+        const errorMsg = 'Firebase Firestore not available';
+        safeLog.error(errorMsg);
+        if (connectionRetries === 0) {
+          alert('Service Error: Database service not available. Please refresh the page.');
+        }
+        return false;
+      }
+
+      if (!auth) {
+        const errorMsg = 'Firebase Auth not available';
+        safeLog.error(errorMsg);
+        if (connectionRetries === 0) {
+          alert('Authentication Error: Authentication service not available. Please refresh the page.');
+        }
+        return false;
       }
       
       if (!user) {
-        safeLog.error('No user logged in');
-        return;
+        const errorMsg = 'No user logged in';
+        safeLog.error(errorMsg);
+        return false;
       }
       
-      // Test storage connection
-      await testStorageConnection(user.uid);
-      safeLog.log('Firebase connection test completed successfully');
+      // Test storage connection with timeout
+      try {
+        await Promise.race([
+          testStorageConnection(user.uid),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Connection timeout')), 10000)
+          )
+        ]);
+        safeLog.log('✅ Firebase connection test completed successfully');
+        setConnectionRetries(0); // Reset retries on success
+        return true;
+      } catch (storageError) {
+        safeLog.error('Storage connection test failed:', storageError);
+        setConnectionRetries(prev => prev + 1);
+        
+        if (storageError.message.includes('timeout')) {
+          if (connectionRetries === 0) {
+            alert('Connection Timeout: Please check your internet connection and try again.');
+          }
+        } else if (storageError.code === 'permission-denied') {
+          if (connectionRetries === 0) {
+            alert('Permission Error: You may need to log out and log back in.');
+          }
+        } else {
+          console.warn('Storage test failed but continuing...', storageError.message);
+        }
+        return connectionRetries < 2; // Continue even if storage test fails, but limit retries
+      }
     } catch (error) {
       safeLog.error('Firebase connection test failed:', error);
+      setConnectionRetries(prev => prev + 1);
+      
+      if (connectionRetries === 0) {
+        alert(`Connection Error: ${error.message}\n\nPlease refresh the page and try again.`);
+      }
+      return false;
     }
   };
 
@@ -165,6 +286,13 @@ const MessagingPage = () => {
     
     safeLog.log('🔄 Loading conversations for user:', user.uid);
     
+    // Test connection first
+    const connectionOk = await testFirebaseConnection();
+    if (!connectionOk) {
+      setLoading(false);
+      return;
+    }
+    
     // Clean up existing subscription
     if (conversationsUnsubscribe) {
       safeLog.log('🧹 Cleaning up existing subscription');
@@ -174,8 +302,57 @@ const MessagingPage = () => {
     setLoading(true);
     
     try {
-      // First load conversations directly
-      safeLog.log('📥 Loading conversations directly...');
+      // Debug existing conversations first
+      const conversationCount = await debugUserConversations(user.uid);
+      safeLog.log('🔍 Debug found', conversationCount, 'conversations');
+      
+      // DIRECT SIMPLE TEST - Let's try the most basic query first
+      safeLog.log('🔍 Testing direct Firestore query...');
+      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const conversationsRef = collection(db, 'conversations');
+      const directQuery = query(conversationsRef, where('members', 'array-contains', user.uid));
+      const directSnapshot = await getDocs(directQuery);
+      safeLog.log('🔍 Direct query found', directSnapshot.docs.length, 'raw conversations');
+      
+      // Log each conversation found
+      directSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        safeLog.log('🔍 Found conversation:', doc.id, {
+          members: data.members,
+          lastMessage: data.lastMessage,
+          lastMessageAt: data.lastMessageAt,
+          createdAt: data.createdAt
+        });
+      });
+      
+      // Fix any conversation data issues
+      if (conversationCount > 0) {
+        await fixUserConversations(user.uid);
+        safeLog.log('🔧 Conversation data fixed');
+      }
+      
+      // Load conversations with direct method (skip enhanced method for debugging)
+      safeLog.log('📥 Loading conversations with simple method...');
+      const simpleConversations = await getSimpleUserConversations(user.uid);
+      safeLog.log('📥 Simple conversations loaded:', simpleConversations.length);
+      
+      if (simpleConversations.length > 0) {
+        setConversations(simpleConversations);
+        setLoading(false);
+        
+        // Auto-select first conversation if none selected and not targeting a user
+        if (!selectedConversation && !searchParams.get('user')) {
+          setSelectedConversation(simpleConversations[0]);
+          loadMessages(simpleConversations[0].id, simpleConversations[0].otherUser.id);
+        }
+        
+        // Skip subscription setup for now to avoid conflicts
+        safeLog.log('✅ Conversations loaded successfully, skipping subscription for debugging');
+        return;
+      }
+      
+      // Fallback to the original method if simple method fails
+      safeLog.log('📥 Simple method found no conversations, trying original method...');
       const directConversations = await getUserConversations(user.uid);
       safeLog.log('📥 Direct conversations loaded:', directConversations.length);
       
@@ -195,26 +372,49 @@ const MessagingPage = () => {
           loadMessages(sortedConversations[0].id, sortedConversations[0].otherUser.id);
         }
       } else {
-        setLoading(false);
+        safeLog.log('📥 No direct conversations found, checking enhanced method...');
+        // Try enhanced method as fallback
+        const enhancedConversations = await getEnhancedUserConversations(user.uid);
+        safeLog.log('📥 Enhanced conversations loaded:', enhancedConversations.length);
+        
+        if (enhancedConversations.length > 0) {
+          setConversations(enhancedConversations);
+          setLoading(false);
+          
+          // Auto-select first conversation if none selected and not targeting a user
+          if (!selectedConversation && !searchParams.get('user')) {
+            setSelectedConversation(enhancedConversations[0]);
+            loadMessages(enhancedConversations[0].id, enhancedConversations[0].otherUser.id);
+          }
+        } else {
+          setLoading(false);
+          safeLog.log('📥 No conversations found with any method');
+        }
       }
       
-      // Set up real-time subscription
+      // Set up real-time subscription (temporarily disabled for debugging)
       safeLog.log('🔔 Setting up real-time subscription...');
       const unsubscribe = subscribeToUserConversations(user.uid, (userConversations) => {
         safeLog.log('🔔 Subscription update:', userConversations.length, 'conversations');
         
-        const sortedConversations = userConversations.sort((a, b) => {
-          const timeA = new Date(a.lastMessageAt || 0).getTime();
-          const timeB = new Date(b.lastMessageAt || 0).getTime();
-          return timeB - timeA;
-        });
-        
-        setConversations(sortedConversations);
-        
-        // Auto-select if needed
-        if (sortedConversations.length > 0 && !selectedConversation && !searchParams.get('user')) {
-          setSelectedConversation(sortedConversations[0]);
-          loadMessages(sortedConversations[0].id, sortedConversations[0].otherUser.id);
+        // Only update if we get more conversations than currently loaded
+        if (userConversations.length > 0) {
+          const sortedConversations = userConversations.sort((a, b) => {
+            const timeA = new Date(a.lastMessageAt || 0).getTime();
+            const timeB = new Date(b.lastMessageAt || 0).getTime();
+            return timeB - timeA;
+          });
+          
+          safeLog.log('🔔 Updating conversations via subscription');
+          setConversations(sortedConversations);
+          
+          // Auto-select if needed
+          if (sortedConversations.length > 0 && !selectedConversation && !searchParams.get('user')) {
+            setSelectedConversation(sortedConversations[0]);
+            loadMessages(sortedConversations[0].id, sortedConversations[0].otherUser.id);
+          }
+        } else {
+          safeLog.log('🔔 Subscription returned empty, keeping existing conversations');
         }
       });
       
@@ -222,6 +422,18 @@ const MessagingPage = () => {
       
     } catch (error) {
       safeLog.error('❌ Error loading conversations:', error);
+      
+      // Handle specific error types
+      if (error.code === 'permission-denied') {
+        alert('Permission Denied: You may need to log out and log back in.');
+      } else if (error.code === 'unavailable') {
+        alert('Service Unavailable: Please check your internet connection and try again.');
+      } else if (error.message?.includes('network')) {
+        alert('Network Error: Please check your internet connection.');
+      } else {
+        alert(`Failed to load conversations: ${error.message}`);
+      }
+      
       setLoading(false);
       setConversations([]);
     }
@@ -641,12 +853,32 @@ const MessagingPage = () => {
               
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                {!isOnline && (
+                  <div className="w-full mb-2 flex items-center justify-center space-x-2 px-3 py-2 bg-red-50 border border-red-200 rounded-md">
+                    <Icon name="WifiOff" size={16} className="text-red-500" />
+                    <span className="text-sm text-red-700">You're offline</span>
+                  </div>
+                )}
                 <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
                 <div className="flex space-x-2">
                   <Button
                     size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      safeLog.log('🔄 Manual refresh requested');
+                      setConnectionRetries(0);
+                      loadConversations();
+                    }}
+                    className="flex-shrink-0"
+                    disabled={!isOnline}
+                  >
+                    <Icon name="RotateCcw" size={16} />
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={() => setShowNewMessageModal(true)}
                     className="flex-shrink-0"
+                    disabled={!isOnline}
                   >
                     <Icon name="Plus" size={16} className="mr-1" />
                     New

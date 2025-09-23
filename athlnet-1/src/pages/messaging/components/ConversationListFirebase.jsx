@@ -86,12 +86,19 @@ const ConversationListFirebase = ({
                 <img
                   src={
                     conversation.otherUser?.profileImage ||
+                    conversation.otherUser?.photoURL ||
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(
                       conversation.otherUser?.name || 'User'
-                    )}&background=3b82f6&color=ffffff&size=48`
+                    )}&background=3b82f6&color=ffffff&size=48&bold=true`
                   }
-                  alt={conversation.otherUser?.name}
+                  alt={conversation.otherUser?.name || 'User'}
                   className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                  onError={(e) => {
+                    // Fallback if image fails to load
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      conversation.otherUser?.name || 'User'
+                    )}&background=3b82f6&color=ffffff&size=48&bold=true`;
+                  }}
                 />
                 {conversation.otherUser?.isOnline && (
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
