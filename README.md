@@ -276,7 +276,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Live Demo**: [athlnet.web.app](https://athlnet.web.app)
 - **GitHub Issues**: [Report bugs and feature requests](https://github.com/Gouthaman11/AthlNet/issues)
-- **Email**: support@athlnet.app
+- **Email**: gouthamanarasu2005@gmail.com
 
 ---
 
