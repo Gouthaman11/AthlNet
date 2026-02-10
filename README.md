@@ -32,7 +32,7 @@
 ### 🤝 **Social Connections**
 - **Connection System** - Send and receive connection requests with real-time updates
 - **Follow/Following** - Build your network with follow functionality
-- **Connection Discovery** - Suggested connections based on interests and location
+- **Connection Discovery** - Suggested connections based on interests and locations.
 - **Social Graph** - View mutual connections and network insights
 
 ### 💬 **Real-time Messaging**
